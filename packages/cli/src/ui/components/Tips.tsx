@@ -17,15 +17,15 @@ export const Tips: React.FC<TipsProps> = ({ config }) => {
   const geminiMdFileCount = config.getGeminiMdFileCount();
   return (
     <Box flexDirection="column">
-      <Text color={Colors.Foreground}>Tips for getting started:</Text>
-      <Text color={Colors.Foreground}>
+      <Text color={Colors.Gray}>Tips for getting started:</Text>
+      <Text color={Colors.Gray}>
         1. Ask questions, edit files, or run commands.
       </Text>
-      <Text color={Colors.Foreground}>
+      <Text color={Colors.Gray}>
         2. Be specific for the best results.
       </Text>
       {geminiMdFileCount === 0 && (
-        <Text color={Colors.Foreground}>
+        <Text color={Colors.Gray}>
           3. Create{' '}
           <Text bold color={Colors.AccentPurple}>
             GEMINI.md
@@ -33,7 +33,7 @@ export const Tips: React.FC<TipsProps> = ({ config }) => {
           files to customize your interactions with Gemini.
         </Text>
       )}
-      <Text color={Colors.Foreground}>
+      <Text color={Colors.Gray}>
         {geminiMdFileCount === 0 ? '4.' : '3.'}{' '}
         <Text bold color={Colors.AccentPurple}>
           /help
