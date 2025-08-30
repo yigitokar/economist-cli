@@ -1,7 +1,5 @@
 # Economist CLI
 
-[![Economist CLI CI](https://github.com/yigitokar/economist-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/yigitokar/economist-cli/actions/workflows/ci.yml)
-[![Version](https://img.shields.io/npm/v/@economist/economist-cli)](https://www.npmjs.com/package/@economist/economist-cli)
 [![License](https://img.shields.io/github/license/yigitokar/economist-cli)](https://github.com/yigitokar/economist-cli/blob/main/LICENSE)
 
 ![Economist CLI Screenshot](./docs/assets/economist-screenshot.png)
@@ -307,5 +305,5 @@ See the [Uninstall Guide](docs/Uninstall.md) for removal instructions.
 ---
 
 <p align="center">
-  Built with ❤️ by the economics and open source community
+  Built with ❤️ by the economists(and open source community) for the economists
 </p>
