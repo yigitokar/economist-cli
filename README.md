@@ -1,20 +1,21 @@
-# Gemini CLI
+# Economist CLI
 
-[![Gemini CLI CI](https://github.com/google-gemini/gemini-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/google-gemini/gemini-cli/actions/workflows/ci.yml)
-[![Version](https://img.shields.io/npm/v/@google/gemini-cli)](https://www.npmjs.com/package/@google/gemini-cli)
-[![License](https://img.shields.io/github/license/google-gemini/gemini-cli)](https://github.com/google-gemini/gemini-cli/blob/main/LICENSE)
+[![Economist CLI CI](https://github.com/yigitokar/economist-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/yigitokar/economist-cli/actions/workflows/ci.yml)
+[![Version](https://img.shields.io/npm/v/@economist/economist-cli)](https://www.npmjs.com/package/@economist/economist-cli)
+[![License](https://img.shields.io/github/license/yigitokar/economist-cli)](https://github.com/yigitokar/economist-cli/blob/main/LICENSE)
 
-![Gemini CLI Screenshot](./docs/assets/gemini-screenshot.png)
+![Economist CLI Screenshot](./docs/assets/economist-screenshot.png)
 
-Gemini CLI is an open-source AI agent that brings the power of Gemini directly into your terminal. It provides lightweight access to Gemini, giving you the most direct path from your prompt to our model.
+Economist CLI is an open-source AI agent tailored for economists, bringing the power of Gemini directly into your terminal. It provides lightweight access to Gemini with specialized features for economic analysis, data processing, and research workflows.
 
-## 🚀 Why Gemini CLI?
+## 🚀 Why Economist CLI?
 
+- **📊 Economics-focused**: Tailored prompts and tools for economic analysis and research
 - **🎯 Free tier**: 60 requests/min and 1,000 requests/day with personal Google account
 - **🧠 Powerful Gemini 2.5 Pro**: Access to 1M token context window
-- **🔧 Built-in tools**: Google Search grounding, file operations, shell commands, web fetching
+- **🔧 Built-in tools**: Data analysis, statistical computations, file operations, shell commands
 - **🔌 Extensible**: MCP (Model Context Protocol) support for custom integrations
-- **💻 Terminal-first**: Designed for developers who live in the command line
+- **💻 Terminal-first**: Designed for economists and researchers who work in the command line
 - **🛡️ Open source**: Apache 2.0 licensed
 
 ## 📦 Installation
@@ -25,19 +26,19 @@ Gemini CLI is an open-source AI agent that brings the power of Gemini directly i
 
 ```bash
 # Using npx (no installation required)
-npx https://github.com/google-gemini/gemini-cli
+npx https://github.com/yigitokar/economist-cli
 ```
 
 #### Install globally with npm
 
 ```bash
-npm install -g @google/gemini-cli
+npm install -g @economist/economist-cli
 ```
 
 #### Install globally with Homebrew (macOS/Linux)
 
 ```bash
-brew install gemini-cli
+brew install economist-cli
 ```
 
 #### System Requirements
@@ -54,7 +55,7 @@ See [Releases](./docs/releases.md) for more details.
 New preview releases will be published each week at UTC 2359 on Tuesdays. These releases will not have been fully vetted and may contain regressions or other outstanding issues. Please help us test and install with `preview` tag.
 
 ```bash
-npm install -g @google/gemini-cli@preview
+npm install -g @economist/economist-cli@preview
 ```
 
 ### Stable
@@ -62,7 +63,7 @@ npm install -g @google/gemini-cli@preview
 - New stable releases will be published each week at UTC 2000 on Tuesdays, this will be the full promotion of last week's `preview` release + any bug fixes and validations. Use `latest` tag.
 
 ```bash
-npm install -g @google/gemini-cli@latest
+npm install -g @economist/economist-cli@latest
 ```
 
 ### Nightly
@@ -70,7 +71,7 @@ npm install -g @google/gemini-cli@latest
 - New releases will be published each week at UTC 0000 each day, This will be all changes from the main branch as represented at time of release. It should be assumed there are pending validations and issues. Use `nightly` tag.
 
 ```bash
-npm install -g @google/gemini-cli@nightly
+npm install -g @economist/economist-cli@nightly
 ```
 
 ## 📋 Key Features
@@ -95,11 +96,11 @@ npm install -g @google/gemini-cli@nightly
 
 ### GitHub Integration
 
-Integrate Gemini CLI directly into your GitHub workflows with [**Gemini CLI GitHub Action**](https://github.com/google-github-actions/run-gemini-cli):
+Integrate Economist CLI directly into your GitHub workflows with [**Economist CLI GitHub Action**](https://github.com/yigitokar/economist-cli-action):
 
 - **Pull Request Reviews**: Automated code review with contextual feedback and suggestions
 - **Issue Triage**: Automated labeling and prioritization of GitHub issues based on content analysis
-- **On-demand Assistance**: Mention `@gemini-cli` in issues and pull requests for help with debugging, explanations, or task delegation
+- **On-demand Assistance**: Mention `@economist-cli` in issues and pull requests for help with debugging, explanations, or task delegation
 - **Custom Workflows**: Build automated, scheduled and on-demand workflows tailored to your team's needs
 
 ## 🔐 Authentication Options
@@ -117,10 +118,10 @@ Choose the authentication method that best fits your needs:
 - **No API key management** - just sign in with your Google account
 - **Automatic updates** to latest models
 
-#### Start Gemini CLI, then choose OAuth and follow the browser authentication flow when prompted
+#### Start Economist CLI, then choose OAuth and follow the browser authentication flow when prompted
 
 ```bash
-gemini
+economist
 ```
 
 #### If you are using a paid Code Assist License from your organization, remember to set the Google Cloud Project
@@ -128,7 +129,7 @@ gemini
 ```bash
 # Set your Google Cloud Project
 export GOOGLE_CLOUD_PROJECT="YOUR_PROJECT_NAME"
-gemini
+economist
 ```
 
 ### Option 2: Gemini API Key
@@ -144,7 +145,7 @@ gemini
 ```bash
 # Get your key from https://aistudio.google.com/apikey
 export GEMINI_API_KEY="YOUR_API_KEY"
-gemini
+economist
 ```
 
 ### Option 3: Vertex AI
@@ -161,7 +162,7 @@ gemini
 # Get your key from Google Cloud Console
 export GOOGLE_API_KEY="YOUR_API_KEY"
 export GOOGLE_GENAI_USE_VERTEXAI=true
-gemini
+economist
 ```
 
 For Google Workspace accounts and other authentication methods, see the [authentication guide](./docs/cli/authentication.md).
@@ -173,7 +174,7 @@ For Google Workspace accounts and other authentication methods, see the [authent
 #### Start in current directory
 
 ```bash
-gemini
+economist
 ```
 
 #### Include multiple directories
@@ -200,16 +201,16 @@ gemini -p "Explain the architecture of this codebase"
 
 ```bash
 cd new-project/
-gemini
+economist
 > Write me a Discord bot that answers questions using a FAQ.md file I will provide
 ```
 
 #### Analyze existing code
 
 ```bash
-git clone https://github.com/google-gemini/gemini-cli
-cd gemini-cli
-gemini
+git clone https://github.com/yigitokar/economist-cli
+cd economist-cli
+economist
 > Give me a summary of all of the changes that went in yesterday
 ```
 
@@ -263,7 +264,7 @@ gemini
 
 ### Using MCP Servers
 
-Configure MCP servers in `~/.gemini/settings.json` to extend Gemini CLI with custom tools:
+Configure MCP servers in `~/.economist/settings.json` to extend Economist CLI with custom tools:
 
 ```text
 > @github List my open pull requests
@@ -275,7 +276,7 @@ See the [MCP Server Integration guide](./docs/tools/mcp-server.md) for setup ins
 
 ## 🤝 Contributing
 
-We welcome contributions! Gemini CLI is fully open source (Apache 2.0), and we encourage the community to:
+We welcome contributions! Economist CLI is fully open source (Apache 2.0), and we encourage the community to:
 
 - Report bugs and suggest features
 - Improve documentation
@@ -284,14 +285,14 @@ We welcome contributions! Gemini CLI is fully open source (Apache 2.0), and we e
 
 See our [Contributing Guide](./CONTRIBUTING.md) for development setup, coding standards, and how to submit pull requests.
 
-Check our [Official Roadmap](https://github.com/orgs/google-gemini/projects/11/) for planned features and priorities.
+Check our [Official Roadmap](https://github.com/yigitokar/economist-cli/projects) for planned features and priorities.
 
 ## 📖 Resources
 
 - **[Official Roadmap](./ROADMAP.md)** - See what's coming next
-- **[NPM Package](https://www.npmjs.com/package/@google/gemini-cli)** - Package registry
-- **[GitHub Issues](https://github.com/google-gemini/gemini-cli/issues)** - Report bugs or request features
-- **[Security Advisories](https://github.com/google-gemini/gemini-cli/security/advisories)** - Security updates
+- **[NPM Package](https://www.npmjs.com/package/@economist/economist-cli)** - Package registry
+- **[GitHub Issues](https://github.com/yigitokar/economist-cli/issues)** - Report bugs or request features
+- **[Security Advisories](https://github.com/yigitokar/economist-cli/security/advisories)** - Security updates
 
 ### Uninstall
 
@@ -306,5 +307,5 @@ See the [Uninstall Guide](docs/Uninstall.md) for removal instructions.
 ---
 
 <p align="center">
-  Built with ❤️ by Google and the open source community
+  Built with ❤️ by the economics and open source community
 </p>

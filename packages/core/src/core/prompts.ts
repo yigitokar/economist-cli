@@ -7,7 +7,6 @@
 import path from 'node:path';
 import fs from 'node:fs';
 import os from 'node:os';
-import { LSTool } from '../tools/ls.js';
 import { EditTool } from '../tools/edit.js';
 import { GlobTool } from '../tools/glob.js';
 import { GrepTool } from '../tools/grep.js';
