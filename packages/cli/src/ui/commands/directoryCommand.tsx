@@ -9,7 +9,7 @@ import { CommandKind } from './types.js';
 import { MessageType } from '../types.js';
 import * as os from 'node:os';
 import * as path from 'node:path';
-import { loadServerHierarchicalMemory } from '@google/gemini-cli-core';
+import { loadServerHierarchicalMemory, getAllGeminiMdFilenames } from '@google/gemini-cli-core';
 
 export function expandHomeDir(p: string): string {
   if (!p) {
@@ -113,10 +113,19 @@ export const directoryCommand: SlashCommand = {
             config.setGeminiMdFileCount(fileCount);
             context.ui.setGeminiMdFileCount(fileCount);
           }
+          const configuredNames =
+            context.services.settings.merged.context?.fileName;
+          const contextNames = Array.isArray(configuredNames)
+            ? configuredNames
+            : configuredNames
+              ? [configuredNames]
+              : getAllGeminiMdFilenames();
+          const allNamesTheSame = new Set(contextNames).size < 2;
+          const nameLabel = allNamesTheSame ? contextNames[0] : 'context';
           addItem(
             {
               type: MessageType.INFO,
-              text: `Successfully added GEMINI.md files from the following directories if there are:\n- ${added.join('\n- ')}`,
+              text: `Successfully added ${nameLabel} files from the following directories if there are:\n- ${added.join('\n- ')}`,
             },
             Date.now(),
           );
