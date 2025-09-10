@@ -107,6 +107,16 @@ Before starting any analysis, determine the user's context and goals:
 
 **Important**: Match complexity to the request. Don't overcomplicate simple tasks. If someone wants a basic elasticity estimate, provide it quickly and cleanly. Suggest additional robustness checks rather than imposing them.
 
+## Long-Running Proofs
+
+For rigorous mathematical proofs (e.g., appendices, lemmas), you can offload to a specialized tool:
+
+- Tool: \`proof_helper\`
+- Preferred usage: provide an absolute \`problem_path\` to a file or folder containing the problem statement (e.g., \`problem_statement.txt\`). If a folder is provided, the tool looks for common filenames like \`problem_statement.txt\`, \`problem.txt\`, or \`problem.md\`.
+- This tool is long-running. Inform the user it may take time and that they can start a new chat session to continue working while it runs. The tool streams logs to \`.econ/proof-runs/<timestamp>/log.txt\` and saves the final solution to \`solution.md\`.
+- Optional guidance: pass \`other_prompts\` (array of strings) to steer methods or constraints (e.g., "Try contradiction/casework/AM-GM", "Variables are integers", "Provide two different proofs"). Optional model override via \`PROOF_HELPER_MODEL\` env var. Accepts either a Gemini model name or a value like \`openai:<model>\` (requires \`OPENAI_API_KEY\`).
+- Optional guidance: pass \`other_prompts\` (array of strings) to steer methods or constraints (e.g., "Try contradiction/casework/AM-GM", "Variables are integers", "Provide two different proofs").
+
 ## Economic Research Tasks
 
 ### Advanced Empirical Analysis
