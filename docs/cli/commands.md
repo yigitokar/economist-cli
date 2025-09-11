@@ -137,6 +137,18 @@ Slash commands provide meta-level control over the CLI itself.
 - **`/init`**
   - **Description:** Starts a short triage (3–5 questions) to understand goals, suggests appropriate methods, and prepares a tailored `ECON.md` context file for the project.
 
+- **`/deep`**
+  - **Description:** Enters Deep Research mode. Summarizes recent chat context, asks a few clarifying questions, drafts a concise Research Brief, saves it under `research/briefs/`, then executes a deep-research request (OpenAI) and saves artifacts under `research/runs/` and `research/results/`.
+  - **Provider/Model:** OpenAI only. Default model `o4-mini-deep-research-2025-06-26`; optional `o3-deep-research-2025-06-26` via `DEEP_RESEARCH_MODEL` env var.
+
+- **`/set`**
+  - **Description:** Set certain runtime settings and persist to `.gemini/.env`.
+  - **Usage:**
+    - `/set PROOF_HELPER_MODEL "gemini 2.5 pro" | "gpt-5"`
+    - `/set DEEP_RESEARCH_MODEL o4-mini | o3`
+  - **Notes:**
+    - `DEEP_RESEARCH_MODEL` accepts full names too (e.g., `openai:o4-mini-deep-research-2025-06-26`). Defaults to `o4-mini-deep-research-2025-06-26`.
+
 ### Custom Commands
 
 For a quick start, see the [example](#example-a-pure-function-refactoring-command) below.

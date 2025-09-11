@@ -137,6 +137,12 @@ Important:
 - Keep the triage questions crisp and on a single screen.
 - Only after user answers, call write_file once to create/update ECON.md at the
   absolute path above. Use clear, publishable Markdown.
+
+After ECON.md is written, optionally offer Python project bootstrap:
+
+- If the project directory is effectively empty and the user prefers Python (or agrees), offer to initialize a modern Python project with uv (pyproject.toml). Proceed only on explicit consent.
+- Let the agent handle uv detection and PATH gracefully (try \`uv\` on PATH, try \`~/.local/bin/uv\`, check Homebrew paths). If uv isn’t available, offer to install it and, if found outside PATH, either use that path for this session or offer to update PATH. Do not install or modify PATH without consent. On Windows, note a new terminal may be required after install.
+- Use a non-interactive uv init that avoids overwriting existing files (e.g., \`uv init --no-readme\`). If the directory isn’t empty or the user declines, do nothing further.
 `,
     };
   },

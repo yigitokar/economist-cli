@@ -49,67 +49,128 @@ async function persistEnvVar(rootDir: string, key: string, value: string) {
 export const setProofModelCommand: SlashCommand = {
   name: 'set',
   description:
-    'Set a runtime setting. Usage: /set PROOF_HELPER_MODEL "gemini 2.5 pro"|"gpt-5"',
+    'Set a runtime setting. Usage: /set PROOF_HELPER_MODEL "gemini 2.5 pro"|"gpt-5" OR /set DEEP_RESEARCH_MODEL "o4-mini"|"o3"',
   kind: CommandKind.BUILT_IN,
   async action(_context, args): Promise<MessageActionReturn> {
     const trimmed = (args || '').trim();
-    if (!trimmed || !trimmed.toUpperCase().startsWith('PROOF_HELPER_MODEL')) {
+    if (!trimmed) {
       return {
         type: 'message',
         messageType: 'error',
         content:
-          'Usage: /set PROOF_HELPER_MODEL "gemini 2.5 pro" | "gpt-5"',
+          'Usage: /set PROOF_HELPER_MODEL "gemini 2.5 pro"|"gpt-5" OR /set DEEP_RESEARCH_MODEL "o4-mini"|"o3"',
       };
     }
 
-    // Extract value after the key
-    const valuePart = trimmed.replace(/^[Pp][Rr][Oo][Oo][Ff]_[Hh][Ee][Ll][Pp][Ee][Rr]_[Mm][Oo][Dd][Ee][Ll]\s*/, '').trim();
-    if (!valuePart) {
+    const m = trimmed.match(/^([A-Za-z_][A-Za-z0-9_]*)\s*(.*)$/);
+    if (!m) {
+      return {
+        type: 'message',
+        messageType: 'error',
+        content:
+          'Usage: /set PROOF_HELPER_MODEL "gemini 2.5 pro"|"gpt-5" OR /set DEEP_RESEARCH_MODEL "o4-mini"|"o3"',
+      };
+    }
+
+    const key = m[1];
+    const valuePart = (m[2] || '').trim();
+
+    // Handle PROOF_HELPER_MODEL
+    if (key.toUpperCase() === 'PROOF_HELPER_MODEL') {
+      if (!valuePart) {
+        return {
+          type: 'message',
+          messageType: 'info',
+          content: 'Current options: "gemini 2.5 pro" (default) or "gpt-5".',
+        };
+      }
+      let envValue: string | null = null;
+      const lower = valuePart.toLowerCase();
+      if (lower === 'gemini 2.5 pro' || lower === 'gemini-2.5-pro') {
+        envValue = 'gemini-2.5-pro';
+      } else if (lower === 'gpt-5' || lower === 'openai:gpt-5') {
+        envValue = 'openai:gpt-5';
+      }
+      if (!envValue) {
+        return {
+          type: 'message',
+          messageType: 'error',
+          content: 'Unrecognized option. Use "gemini 2.5 pro" or "gpt-5".',
+        };
+      }
+      process.env['PROOF_HELPER_MODEL'] = envValue;
+      const rootDir = process.cwd();
+      await persistEnvVar(rootDir, 'PROOF_HELPER_MODEL', envValue);
       return {
         type: 'message',
         messageType: 'info',
         content:
-          'Current options: "gemini 2.5 pro" (default) or "gpt-5".',
+          `Set PROOF_HELPER_MODEL=${envValue}.` +
+          (envValue.startsWith('openai:')
+            ? ' Note: requires OPENAI_API_KEY in your .env.'
+            : ''),
       };
     }
 
-    let envValue: string | null = null;
-    const lower = valuePart.toLowerCase();
-    if (lower === 'gemini 2.5 pro' || lower === 'gemini-2.5-pro') {
-      envValue = 'gemini-2.5-pro';
-    } else if (lower === 'gpt-5' || lower === 'openai:gpt-5') {
-      envValue = 'openai:gpt-5';
-    }
-
-    if (!envValue) {
+    // Handle DEEP_RESEARCH_MODEL
+    if (key.toUpperCase() === 'DEEP_RESEARCH_MODEL') {
+      if (!valuePart) {
+        return {
+          type: 'message',
+          messageType: 'info',
+          content:
+            'Current options: "o4-mini" (default) or "o3". This sets DEEP_RESEARCH_MODEL=openai:<model>.',
+        };
+      }
+      const lower = valuePart.toLowerCase();
+      let envValue: string | null = null;
+      if (
+        lower === 'o4-mini' ||
+        lower === 'o4' ||
+        lower === 'o4-mini-deep-research-2025-06-26' ||
+        lower === 'openai:o4-mini-deep-research-2025-06-26'
+      ) {
+        envValue = 'openai:o4-mini-deep-research-2025-06-26';
+      } else if (
+        lower === 'o3' ||
+        lower === 'o3-deep-research-2025-06-26' ||
+        lower === 'openai:o3-deep-research-2025-06-26'
+      ) {
+        envValue = 'openai:o3-deep-research-2025-06-26';
+      }
+      if (!envValue) {
+        return {
+          type: 'message',
+          messageType: 'error',
+          content:
+            'Unrecognized option. Use "o4-mini" (default) or "o3". Example: /set DEEP_RESEARCH_MODEL o4-mini',
+        };
+      }
+      process.env['DEEP_RESEARCH_MODEL'] = envValue;
+      const rootDir = process.cwd();
+      await persistEnvVar(rootDir, 'DEEP_RESEARCH_MODEL', envValue);
       return {
         type: 'message',
-        messageType: 'error',
+        messageType: 'info',
         content:
-          'Unrecognized option. Use "gemini 2.5 pro" or "gpt-5".', 
+          `Set DEEP_RESEARCH_MODEL=${envValue}. Requires OPENAI_API_KEY in your .env.`,
       };
     }
-
-    // Set in current session and persist to .gemini/.env
-    process.env['PROOF_HELPER_MODEL'] = envValue;
-    const rootDir = process.cwd();
-    await persistEnvVar(rootDir, 'PROOF_HELPER_MODEL', envValue);
 
     return {
       type: 'message',
-      messageType: 'info',
-      content: `Set PROOF_HELPER_MODEL=${envValue}.` +
-        (envValue.startsWith('openai:')
-          ? ' Note: requires OPENAI_API_KEY in your .env (we can handle later).'
-          : ''),
+      messageType: 'error',
+      content:
+        'Unsupported key. Use PROOF_HELPER_MODEL or DEEP_RESEARCH_MODEL.',
     };
   },
   async completion(_context, partialArg: string): Promise<string[]> {
     const suggestions = [
       'PROOF_HELPER_MODEL gemini 2.5 pro',
       'PROOF_HELPER_MODEL gpt-5',
+      'DEEP_RESEARCH_MODEL o4-mini',
+      'DEEP_RESEARCH_MODEL o3',
     ];
     return suggestions.filter((s) => s.toLowerCase().startsWith(partialArg.toLowerCase()));
   },
 };
-

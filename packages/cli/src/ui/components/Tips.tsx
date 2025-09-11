@@ -32,7 +32,7 @@ export const Tips: React.FC<TipsProps> = ({ config: _config }) => {
         file.
       </Text>
       <Text color={Colors.Gray}>
-        2. Be specific for the best results.
+        2. Ask for proof help
       </Text>
       <Text color={Colors.Gray}>
         3. Ask for data analysis, econometric modeling, or paper implementation help.

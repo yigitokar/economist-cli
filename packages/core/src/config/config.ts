@@ -870,6 +870,13 @@ export class Config {
     registerCoreTool(MemoryTool);
     registerCoreTool(WebSearchTool, this);
     registerCoreTool(ProofHelperTool, this);
+    // Deep Research (OpenAI Responses background) tool
+    try {
+      const { DeepLiteratureReviewTool } = await import('../tools/deep-literature-review.js');
+      registerCoreTool(DeepLiteratureReviewTool, this);
+    } catch {
+      // If import fails for any reason, skip silently (non-fatal)
+    }
 
     await registry.discoverAllTools();
     return registry;
