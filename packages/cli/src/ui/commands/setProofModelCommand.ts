@@ -49,7 +49,7 @@ async function persistEnvVar(rootDir: string, key: string, value: string) {
 export const setProofModelCommand: SlashCommand = {
   name: 'set',
   description:
-    'Set a runtime setting. Usage: /set PROOF_HELPER_MODEL "gemini 2.5 pro"|"gpt-5" OR /set DEEP_RESEARCH_MODEL "o4-mini"|"o3"',
+    'Set a runtime setting. Usage: /set PROOF_HELPER_MODEL "gemini 2.5 pro"|"gpt-5" OR /set DEEP_RESEARCH_MODEL "o4-mini"|"o3" OR /set GPT5_REASONING_EFFORT low|medium|high',
   kind: CommandKind.BUILT_IN,
   async action(_context, args): Promise<MessageActionReturn> {
     const trimmed = (args || '').trim();
@@ -58,7 +58,7 @@ export const setProofModelCommand: SlashCommand = {
         type: 'message',
         messageType: 'error',
         content:
-          'Usage: /set PROOF_HELPER_MODEL "gemini 2.5 pro"|"gpt-5" OR /set DEEP_RESEARCH_MODEL "o4-mini"|"o3"',
+          'Usage: /set PROOF_HELPER_MODEL "gemini 2.5 pro"|"gpt-5" OR /set DEEP_RESEARCH_MODEL "o4-mini"|"o3" OR /set GPT5_REASONING_EFFORT low|medium|high',
       };
     }
 
@@ -68,7 +68,7 @@ export const setProofModelCommand: SlashCommand = {
         type: 'message',
         messageType: 'error',
         content:
-          'Usage: /set PROOF_HELPER_MODEL "gemini 2.5 pro"|"gpt-5" OR /set DEEP_RESEARCH_MODEL "o4-mini"|"o3"',
+          'Usage: /set PROOF_HELPER_MODEL "gemini 2.5 pro"|"gpt-5" OR /set DEEP_RESEARCH_MODEL "o4-mini"|"o3" OR /set GPT5_REASONING_EFFORT low|medium|high',
       };
     }
 
@@ -157,11 +157,38 @@ export const setProofModelCommand: SlashCommand = {
       };
     }
 
+    // Handle GPT5_REASONING_EFFORT
+    if (key.toUpperCase() === 'GPT5_REASONING_EFFORT') {
+      if (!valuePart) {
+        return {
+          type: 'message',
+          messageType: 'info',
+          content: 'Usage: /set GPT5_REASONING_EFFORT low|medium|high (default: low).',
+        };
+      }
+      const lower = valuePart.toLowerCase();
+      if (!['low', 'medium', 'high'].includes(lower)) {
+        return {
+          type: 'message',
+          messageType: 'error',
+          content: 'Unrecognized option. Use low, medium, or high.',
+        };
+      }
+      process.env['GPT5_REASONING_EFFORT'] = lower;
+      const rootDir = process.cwd();
+      await persistEnvVar(rootDir, 'GPT5_REASONING_EFFORT', lower);
+      return {
+        type: 'message',
+        messageType: 'info',
+        content: `Set GPT5_REASONING_EFFORT=${lower}.`,
+      };
+    }
+
     return {
       type: 'message',
       messageType: 'error',
       content:
-        'Unsupported key. Use PROOF_HELPER_MODEL or DEEP_RESEARCH_MODEL.',
+        'Unsupported key. Use PROOF_HELPER_MODEL, DEEP_RESEARCH_MODEL, or GPT5_REASONING_EFFORT.',
     };
   },
   async completion(_context, partialArg: string): Promise<string[]> {
@@ -170,6 +197,7 @@ export const setProofModelCommand: SlashCommand = {
       'PROOF_HELPER_MODEL gpt-5',
       'DEEP_RESEARCH_MODEL o4-mini',
       'DEEP_RESEARCH_MODEL o3',
+      'GPT5_REASONING_EFFORT medium',
     ];
     return suggestions.filter((s) => s.toLowerCase().startsWith(partialArg.toLowerCase()));
   },

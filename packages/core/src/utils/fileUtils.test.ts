@@ -709,7 +709,7 @@ describe('fileUtils', () => {
       expect(
         (result.llmContent as { inlineData: { data: string } }).inlineData.data,
       ).toBe(fakePngData.toString('base64'));
-      expect(result.returnDisplay).toContain('Read image file: image.png');
+      expect(result.returnDisplay).toBe('Read file.');
     });
 
     it('should process a PDF file', async () => {
@@ -731,7 +731,7 @@ describe('fileUtils', () => {
       expect(
         (result.llmContent as { inlineData: { data: string } }).inlineData.data,
       ).toBe(fakePdfData.toString('base64'));
-      expect(result.returnDisplay).toContain('Read pdf file: document.pdf');
+      expect(result.returnDisplay).toBe('Read file.');
     });
 
     it('should read an SVG file as text when under 1MB', async () => {
@@ -752,7 +752,7 @@ describe('fileUtils', () => {
       );
 
       expect(result.llmContent).toBe(svgContent);
-      expect(result.returnDisplay).toContain('Read SVG as text');
+      expect(result.returnDisplay).toBe('Read file.');
     });
 
     it('should skip binary files', async () => {
@@ -798,7 +798,7 @@ describe('fileUtils', () => {
       const expectedContent = lines.slice(5, 10).join('\n');
 
       expect(result.llmContent).toBe(expectedContent);
-      expect(result.returnDisplay).toBe('Read lines 6-10 of 20 from test.txt');
+      expect(result.returnDisplay).toBe('Read file preview.');
       expect(result.isTruncated).toBe(true);
       expect(result.originalLineCount).toBe(20);
       expect(result.linesShown).toEqual([6, 10]);
@@ -819,7 +819,7 @@ describe('fileUtils', () => {
       const expectedContent = lines.slice(10, 20).join('\n');
 
       expect(result.llmContent).toContain(expectedContent);
-      expect(result.returnDisplay).toBe('Read lines 11-20 of 20 from test.txt');
+      expect(result.returnDisplay).toBe('Read file preview.');
       expect(result.isTruncated).toBe(true); // This is the key check for the bug
       expect(result.originalLineCount).toBe(20);
       expect(result.linesShown).toEqual([11, 20]);
@@ -839,7 +839,7 @@ describe('fileUtils', () => {
       const expectedContent = lines.join('\n');
 
       expect(result.llmContent).toBe(expectedContent);
-      expect(result.returnDisplay).toBe('');
+      expect(result.returnDisplay).toBe('Read file.');
       expect(result.isTruncated).toBe(false);
       expect(result.originalLineCount).toBe(2);
       expect(result.linesShown).toEqual([1, 2]);
@@ -863,9 +863,7 @@ describe('fileUtils', () => {
         longLine.substring(0, 2000) + '... [truncated]',
       );
       expect(result.llmContent).toContain('Another short line');
-      expect(result.returnDisplay).toBe(
-        'Read all 3 lines from test.txt (some lines were shortened)',
-      );
+      expect(result.returnDisplay).toBe('Read file preview.');
       expect(result.isTruncated).toBe(true);
     });
 
@@ -883,7 +881,7 @@ describe('fileUtils', () => {
       );
 
       expect(result.isTruncated).toBe(true);
-      expect(result.returnDisplay).toBe('Read lines 1-5 of 11 from test.txt');
+      expect(result.returnDisplay).toBe('Read file preview.');
     });
 
     it('should truncate when a line length exceeds the character limit', async () => {
@@ -902,9 +900,7 @@ describe('fileUtils', () => {
       );
 
       expect(result.isTruncated).toBe(true);
-      expect(result.returnDisplay).toBe(
-        'Read all 11 lines from test.txt (some lines were shortened)',
-      );
+      expect(result.returnDisplay).toBe('Read file preview.');
     });
 
     it('should truncate both line count and line length when both exceed limits', async () => {
@@ -927,9 +923,7 @@ describe('fileUtils', () => {
         10,
       );
       expect(result.isTruncated).toBe(true);
-      expect(result.returnDisplay).toBe(
-        'Read lines 1-10 of 20 from test.txt (some lines were shortened)',
-      );
+      expect(result.returnDisplay).toBe('Read file preview.');
     });
 
     it('should return an error if the file size exceeds 20MB', async () => {

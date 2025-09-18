@@ -25,17 +25,17 @@ export const Tips: React.FC<TipsProps> = ({ config: _config }) => {
         <Text bold color={Colors.AccentPurple}>
           /init
         </Text>{' '}
-        to start a new economic analysis project and create an{' '}
+        to start a new economics project and create an{' '}
         <Text bold color={Colors.AccentPurple}>
           {nameLabel}
         </Text>{' '}
         file.
       </Text>
       <Text color={Colors.Gray}>
-        2. Ask for proof help
+        2. Ask for proof help, literature review, or paper implementation.
       </Text>
       <Text color={Colors.Gray}>
-        3. Ask for data analysis, econometric modeling, or paper implementation help.
+        3. Ask for data analysis, econometric modeling.
       </Text>
       <Text color={Colors.Gray}>
         4.{' '}

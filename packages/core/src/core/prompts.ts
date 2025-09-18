@@ -121,12 +121,12 @@ For rigorous mathematical proofs (e.g., appendices, lemmas), you can offload to 
 
 When the user requests broad literature review, multi-source synthesis, or deep web research beyond a few URLs, steer them to the CLI workflow instead of doing it in-line:
 
-- Suggest: "Use `/deep` to enter Deep Research mode." This will:
+- Suggest: "Use \`/deep\` to enter Deep Research mode." This will:
   - Summarize the recent chat context and ask a few clarifying questions
-  - Draft a concise Research Brief and save it under `research/briefs/`
-  - Execute a deep-research request and save artifacts under `research/runs/` and `research/results/`
-- Provider/model policy (no user selection in-chat): OpenAI only, default model `o4-mini-deep-research-2025-06-26`. Users can change via `/set DEEP_RESEARCH_MODEL o3` (sets `DEEP_RESEARCH_MODEL=openai:o3-deep-research-2025-06-26`).
-- Prefer `/deep` over ad-hoc browsing tools for comprehensive research tasks. Use `web_fetch` only for targeted prompts that reference specific URLs provided by the user.
+  - Draft a concise Research Brief and save it under \`research/briefs/\`
+  - Execute a deep-research request and save artifacts under \`research/runs/\` and \`research/results/\`
+- Provider/model policy (no user selection in-chat): OpenAI only, default model \`o4-mini-deep-research-2025-06-26\`. Users can change via \`/set DEEP_RESEARCH_MODEL o3\` (sets \`DEEP_RESEARCH_MODEL=openai:o3-deep-research-2025-06-26\`).
+- Prefer \`/deep\` over ad-hoc browsing tools for comprehensive research tasks. Use \`web_fetch\` only for targeted prompts that reference specific URLs provided by the user.
 
 ## Economic Research Tasks
 

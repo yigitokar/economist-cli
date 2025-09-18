@@ -287,7 +287,7 @@ describe('ReadFileTool', () => {
           mimeType: 'image/png',
         },
       });
-      expect(result.returnDisplay).toBe('Read image file: image.png');
+      expect(result.returnDisplay).toBe('Read file.');
     });
 
     it('should handle PDF file and return appropriate content', async () => {
@@ -308,7 +308,7 @@ describe('ReadFileTool', () => {
           mimeType: 'application/pdf',
         },
       });
-      expect(result.returnDisplay).toBe('Read pdf file: document.pdf');
+      expect(result.returnDisplay).toBe('Read file.');
     });
 
     it('should handle binary file and skip content', async () => {
@@ -341,7 +341,7 @@ describe('ReadFileTool', () => {
 
       const result = await invocation.execute(abortSignal);
       expect(result.llmContent).toBe(svgContent);
-      expect(result.returnDisplay).toBe('Read SVG as text: image.svg');
+      expect(result.returnDisplay).toBe('Read file.');
     });
 
     it('should handle large SVG file', async () => {
@@ -375,7 +375,7 @@ describe('ReadFileTool', () => {
 
       const result = await invocation.execute(abortSignal);
       expect(result.llmContent).toBe('');
-      expect(result.returnDisplay).toBe('');
+      expect(result.returnDisplay).toBe('Read file.');
     });
 
     it('should support offset and limit for text files', async () => {
@@ -404,9 +404,7 @@ describe('ReadFileTool', () => {
       expect(result.llmContent).toContain('Line 6');
       expect(result.llmContent).toContain('Line 7');
       expect(result.llmContent).toContain('Line 8');
-      expect(result.returnDisplay).toBe(
-        'Read lines 6-8 of 20 from paginated.txt',
-      );
+      expect(result.returnDisplay).toBe('Read file preview.');
     });
 
     describe('with .geminiignore', () => {

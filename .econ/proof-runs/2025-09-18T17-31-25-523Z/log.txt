@@ -1,0 +1,821 @@
+[ProofHelper] Model env: "(unset)"
+
+
+>>>>>>>>>>>>>>>>>>>>>>>>>> Run 0 of 10 ...
+>>>>>> Initial prompt.
+[ProofHelper] GPT5 reasoning effort: low
+[ProofHelper] Provider: openai, Model: "gpt-5-mini-2025-08-07"
+>>>>>>> Self improvement start:
+1. Summary
+
+a. Verdict:
+
+I have found a complete solution. The final answer is
+\[
+\hat\beta_1 \;=\; (X_1^\top M_2 X_1)^{-1} X_1^\top M_2 y,
+\]
+where $M_2=I_n-P_2$ and $P_2=X_2(X_2^\top X_2)^{-1}X_2^\top$.
+
+b. Method Sketch:
+
+Overall strategy: Start from the normal equations for the full OLS problem with the partitioned regressor matrix $X=[X_1\ X_2]$. Use the second block of the normal equations to solve for $\hat\beta_2$ in terms of $\hat\beta_1$, substitute that expression into the first block, and simplify using the definition of the projection matrix $P_2$ and residual-maker $M_2$. This yields a linear system in $\hat\beta_1$ whose coefficient matrix is $X_1^\top M_2 X_1$ and whose right-hand side is $X_1^\top M_2 y$. Key lemmas used:
+
+Lemma 1 (properties of $P_2$, $M_2$): $P_2$ is an orthogonal projection onto $\operatorname{col}(X_2)$, so $P_2^\top=P_2$, $P_2^2=P_2$, and $M_2:=I_n-P_2$ is symmetric idempotent with $M_2 X_2=0$.
+
+Lemma 2 (invertibility): Under the rank assumptions $\operatorname{rank}(X_2)=k_2$ and $\operatorname{rank}(X)=k_1+k_2$, the matrix $X_1^\top M_2 X_1$ is invertible (positive definite). Proof: for any nonzero $v\in\mathbb{R}^{k_1}$, $v^\top X_1^\top M_2 X_1 v=\|M_2 X_1 v\|^2>0$, because $M_2 X_1 v=0$ would imply a linear dependence between columns of $X_1$ and $X_2$, contradicting full column rank of $X$.
+
+These lead directly to the stated formula by substitution and inversion.
+
+2. Detailed Solution
+
+Let $\hat\beta=(\hat\beta_1^\top,\hat\beta_2^\top)^\top$ be the OLS estimator from regressing $y$ on $X=[X_1\ X_2]$. The normal equations for the full regression are
+\[
+X^\top X\,\hat\beta \;=\; X^\top y.
+\]
+Partitioning according to $X=[X_1\ X_2]$ and $\hat\beta=(\hat\beta_1^\top,\hat\beta_2^\top)^\top$ gives the block system
+\[
+\begin{pmatrix}
+X_1^\top X_1 & X_1^\top X_2\\[4pt]
+X_2^\top X_1 & X_2^\top X_2
+\end{pmatrix}
+\begin{pmatrix}\hat\beta_1\\[4pt]\hat\beta_2\end{pmatrix}
+\;=\;
+\begin{pmatrix}X_1^\top y\\[4pt]X_2^\top y\end{pmatrix}.
+\]
+From the second block row we have
+\[
+X_2^\top X_1\,\hat\beta_1 \;+\; X_2^\top X_2\,\hat\beta_2 \;=\; X_2^\top y.
+\]
+Since $\operatorname{rank}(X_2)=k_2$, the matrix $X_2^\top X_2$ is invertible, so we can solve for $\hat\beta_2$:
+\[
+\hat\beta_2 \;=\; (X_2^\top X_2)^{-1}\big( X_2^\top y - X_2^\top X_1\,\hat\beta_1\big).
+\]
+Substitute this expression into the first block row:
+\[
+X_1^\top X_1\,\hat\beta_1 \;+\; X_1^\top X_2\,\hat\beta_2 \;=\; X_1^\top y,
+\]
+so
+\[
+X_1^\top X_1\,\hat\beta_1 \;+\; X_1^\top X_2\,(X_2^\top X_2)^{-1}\big( X_2^\top y - X_2^\top X_1\,\hat\beta_1\big)
+\;=\; X_1^\top y.
+\]
+Rearrange terms grouping those multiplying $\hat\beta_1$:
+\[
+\Big( X_1^\top X_1 \;-\; X_1^\top X_2\,(X_2^\top X_2)^{-1} X_2^\top X_1\Big)\hat\beta_1
+\;=\;
+X_1^\top y \;-\; X_1^\top X_2\,(X_2^\top X_2)^{-1} X_2^\top y.
+\]
+Recognize the projection matrix onto $\operatorname{col}(X_2)$,
+\[
+P_2 \;=\; X_2(X_2^\top X_2)^{-1}X_2^\top,
+\]
+and the residual-maker (annihilator) matrix
+\[
+M_2 \;=\; I_n - P_2.
+\]
+Then the coefficient matrix on the left and the right-hand side can be written as
+\[
+X_1^\top M_2 X_1 \quad\text{and}\quad X_1^\top M_2 y,
+\]
+respectively. Thus we have the linear system
+\[
+X_1^\top M_2 X_1\,\hat\beta_1 \;=\; X_1^\top M_2 y.
+\]
+
+It remains to show that $X_1^\top M_2 X_1$ is invertible so that $\hat\beta_1$ is uniquely given by the displayed inverse. For any $v\in\mathbb{R}^{k_1}$,
+\[
+v^\top (X_1^\top M_2 X_1) v \;=\; (X_1 v)^\top M_2 (X_1 v) \;=\; \|M_2 X_1 v\|_2^2.
+\]
+If $\|M_2 X_1 v\|_2^2=0$ then $M_2 X_1 v=0$, so $X_1 v\in\operatorname{col}(X_2)$. Hence there exist $w\in\mathbb{R}^{k_2}$ such that $X_1 v = X_2 w$, and therefore $X_1 v - X_2 w = 0$, which is a nontrivial linear relation among the columns of $X$ if $v\neq 0$. That would contradict the assumption $\operatorname{rank}(X)=k_1+k_2$. Therefore for every $v\neq 0$, $v^\top X_1^\top M_2 X_1 v>0$, so $X_1^\top M_2 X_1$ is positive definite and hence invertible.
+
+Consequently,
+\[
+\hat\beta_1 \;=\; (X_1^\top M_2 X_1)^{-1} X_1^\top M_2 y,
+\]
+which completes the proof.
+>>>>>>> First solution:
+>>>>>>> Corrected solution:
+>>>>>>> Check if solution is complete:
+1. Summary
+
+a. Verdict:
+
+I have found a complete solution. The final answer is
+\[
+\hat\beta_1 \;=\; (X_1^\top M_2 X_1)^{-1} X_1^\top M_2 y,
+\]
+where $P_2 = X_2(X_2^\top X_2)^{-1}X_2^\top$ and $M_2 = I_n - P_2$.
+
+b. Method Sketch:
+
+Overall strategy: Derive the block normal equations for the full regression of $y$ on $X=[X_1\ X_2]$, solve the second block for $\hat\beta_2$ in terms of $\hat\beta_1$, substitute into the first block, and simplify to obtain a linear system in $\hat\beta_1$ with coefficient matrix $X_1^\top M_2 X_1$ and right-hand side $X_1^\top M_2 y$. Finally, show this coefficient matrix is invertible under the stated rank assumptions, giving the stated formula.
+
+Key lemmas and precise statements used:
+
+Lemma 1 (Projection and annihilator properties).
+Let $P_2 = X_2(X_2^\top X_2)^{-1}X_2^\top$ and $M_2 = I_n - P_2$. Then
+- $P_2^\top = P_2$ and $P_2^2 = P_2$ (so $P_2$ is the orthogonal projection onto $\operatorname{col}(X_2)$),
+- $M_2^\top = M_2$ and $M_2^2 = M_2$,
+- $P_2 X_2 = X_2$ and $M_2 X_2 = 0$.
+
+Lemma 2 (Invertibility).
+Under $\operatorname{rank}(X_2)=k_2$ and $\operatorname{rank}(X)=k_1+k_2$, the matrix $X_1^\top M_2 X_1$ is positive definite and hence invertible:
+\[
+v^\top (X_1^\top M_2 X_1) v = \|M_2 X_1 v\|_2^2 > 0 \quad\text{for all } v\in\mathbb{R}^{k_1}\setminus\{0\}.
+\]
+
+These lemmas justify rewriting the block Schur-complement expression as $X_1^\top M_2 X_1$ and guarantee its invertibility, yielding the stated explicit formula for $\hat\beta_1$.
+
+2. Detailed Solution
+
+Let $\hat\beta=(\hat\beta_1^\top,\hat\beta_2^\top)^\top$ be the ordinary least squares estimator from regressing $y\in\mathbb{R}^n$ on $X=[X_1\ X_2]$ with $X_1\in\mathbb{R}^{n\times k_1}$ and $X_2\in\mathbb{R}^{n\times k_2}$. The normal equations are
+\[
+X^\top X\,\hat\beta \;=\; X^\top y.
+\]
+Partitioning according to $X=[X_1\ X_2]$ and $\hat\beta=(\hat\beta_1^\top,\hat\beta_2^\top)^\top$ yields the block system
+\[
+\begin{pmatrix}
+X_1^\top X_1 & X_1^\top X_2\\[6pt]
+X_2^\top X_1 & X_2^\top X_2
+\end{pmatrix}
+\begin{pmatrix}\hat\beta_1\\[6pt]\hat\beta_2\end{pmatrix}
+\;=\;
+\begin{pmatrix}X_1^\top y\\[6pt]X_2^\top y\end{pmatrix}.
+\]
+
+Because $\operatorname{rank}(X_2)=k_2$, the Gram matrix $X_2^\top X_2$ is invertible. The second block row gives
+\[
+X_2^\top X_1\,\hat\beta_1 \;+\; X_2^\top X_2\,\hat\beta_2 \;=\; X_2^\top y,
+\]
+so
+\[
+\hat\beta_2 \;=\; (X_2^\top X_2)^{-1}\big( X_2^\top y - X_2^\top X_1\,\hat\beta_1\big).
+\]
+Substitute this expression for $\hat\beta_2$ into the first block row:
+\[
+X_1^\top X_1\,\hat\beta_1 \;+\; X_1^\top X_2\,\hat\beta_2 \;=\; X_1^\top y,
+\]
+which becomes
+\[
+X_1^\top X_1\,\hat\beta_1 \;+\; X_1^\top X_2\,(X_2^\top X_2)^{-1}\big( X_2^\top y - X_2^\top X_1\,\hat\beta_1\big)
+\;=\; X_1^\top y.
+\]
+Rearrange to collect terms multiplied by $\hat\beta_1$:
+\[
+\Big( X_1^\top X_1 \;-\; X_1^\top X_2\,(X_2^\top X_2)^{-1} X_2^\top X_1\Big)\hat\beta_1
+\;=\;
+X_1^\top y \;-\; X_1^\top X_2\,(X_2^\top X_2)^{-1} X_2^\top y.
+\]
+
+Define the projection matrix onto $\operatorname{col}(X_2)$ by
+\[
+P_2 := X_2(X_2^\top X_2)^{-1}X_2^\top,
+\]
+and the residual-maker (annihilator) matrix by
+\[
+M_2 := I_n - P_2.
+\]
+From these definitions,
+\[
+X_1^\top X_2\,(X_2^\top X_2)^{-1} X_2^\top X_1 = X_1^\top P_2 X_1,
+\qquad
+X_1^\top X_2\,(X_2^\top X_2)^{-1} X_2^\top y = X_1^\top P_2 y,
+\]
+hence the previous equation is
+\[
+\big( X_1^\top X_1 - X_1^\top P_2 X_1 \big)\hat\beta_1 = X_1^\top y - X_1^\top P_2 y.
+\]
+Equivalently,
+\[
+X_1^\top (I_n - P_2) X_1\,\hat\beta_1 \;=\; X_1^\top (I_n - P_2) y,
+\]
+so
+\[
+X_1^\top M_2 X_1\,\hat\beta_1 \;=\; X_1^\top M_2 y.
+\]
+
+It remains to show $X_1^\top M_2 X_1$ is invertible. First note basic properties of $P_2$ and $M_2$:
+
+- $P_2$ is symmetric and idempotent: $P_2^\top = P_2$ and $P_2^2 = P_2$; hence $M_2^\top = M_2$ and $M_2^2 = M_2$.
+- $P_2$ projects onto $\operatorname{col}(X_2)$, so $P_2 X_2 = X_2$ and therefore $M_2 X_2 = 0$.
+
+For any nonzero vector $v\in\mathbb{R}^{k_1}$,
+\[
+v^\top (X_1^\top M_2 X_1) v \;=\; (X_1 v)^\top M_2 (X_1 v) \;=\; \|M_2 X_1 v\|_2^2 \ge 0.
+\]
+If $\|M_2 X_1 v\|_2^2 = 0$ then $M_2 X_1 v = 0$, hence $X_1 v \in \operatorname{col}(X_2)$. Thus there exists $w\in\mathbb{R}^{k_2}$ with $X_1 v = X_2 w$, so
+\[
+X_1 v - X_2 w = 0.
+\]
+If $v\neq 0$ this is a nontrivial linear relation among the columns of $[X_1\ X_2]$. That contradicts the assumption $\operatorname{rank}(X)=k_1+k_2$. Therefore for all $v\neq 0$ we have $v^\top X_1^\top M_2 X_1 v > 0$, so $X_1^\top M_2 X_1$ is positive definite and hence invertible.
+
+Multiplying both sides of $X_1^\top M_2 X_1\,\hat\beta_1 = X_1^\top M_2 y$ by the inverse yields
+\[
+\hat\beta_1 \;=\; (X_1^\top M_2 X_1)^{-1} X_1^\top M_2 y,
+\]
+which completes the proof.
+>>>>>>> Vefify the solution.
+>>>>>>> Start verification.
+Summary
+
+Final Verdict: The solution is correct.
+
+List of Findings:
+- No Critical Errors or Justification Gaps were found.
+
+Detailed Verification Log
+
+I will proceed through the solution step by step, quoting the relevant lines and giving a brief justification for each.
+
+1. Quoted text:
+   "Let $\hat\beta=(\hat\beta_1^\top,\hat\beta_2^\top)^\top$ be the ordinary least squares estimator ... The normal equations are
+   \[
+   X^\top X\,\hat\beta \;=\; X^\top y.
+   \]"
+   Verification:
+   - Correct. The normal equations for OLS with full column rank design matrix X are X^T X β̂ = X^T y.
+
+2. Quoted text:
+   "Partitioning according to $X=[X_1\ X_2]$ and $\hat\beta=(\hat\beta_1^\top,\hat\beta_2^\top)^\top$ yields the block system
+   \[
+   \begin{pmatrix}
+   X_1^\top X_1 & X_1^\top X_2\\[6pt]
+   X_2^\top X_1 & X_2^\top X_2
+   \end{pmatrix}
+   \begin{pmatrix}\hat\beta_1\\[6pt]\hat\beta_2\end{pmatrix}
+   \;=\;
+   \begin{pmatrix}X_1^\top y\\[6pt]X_2^\top y\end{pmatrix}.
+   \]"
+   Verification:
+   - Correct. This is the standard block decomposition of the normal equations given the partition of X and β̂.
+
+3. Quoted text:
+   "Because $\operatorname{rank}(X_2)=k_2$, the Gram matrix $X_2^\top X_2$ is invertible."
+   Verification:
+   - Correct. Rank k2 equals the number of columns of X2, so X2 has full column rank and X2^T X2 is positive definite and invertible.
+
+4. Quoted text:
+   "The second block row gives
+   \[
+   X_2^\top X_1\,\hat\beta_1 \;+\; X_2^\top X_2\,\hat\beta_2 \;=\; X_2^\top y,
+   \]
+   so
+   \[
+   \hat\beta_2 \;=\; (X_2^\top X_2)^{-1}\big( X_2^\top y - X_2^\top X_1\,\hat\beta_1\big).
+   \]"
+   Verification:
+   - Correct. Solving the second block equation for β̂2 uses invertibility of X2^T X2; algebra is straightforward.
+
+5. Quoted text:
+   "Substitute this expression for $\hat\beta_2$ into the first block row:
+   \[
+   X_1^\top X_1\,\hat\beta_1 \;+\; X_1^\top X_2\,\hat\beta_2 \;=\; X_1^\top y,
+   \]
+   which becomes
+   \[
+   X_1^\top X_1\,\hat\beta_1 \;+\; X_1^\top X_2\,(X_2^\top X_2)^{-1}\big( X_2^\top y - X_2^\top X_1\,\hat\beta_1\big)
+   \;=\; X_1^\top y.
+   \]"
+   Verification:
+   - Correct. Straightforward substitution.
+
+6. Quoted text:
+   "Rearrange to collect terms multiplied by $\hat\beta_1$:
+   \[
+   \Big( X_1^\top X_1 \;-\; X_1^\top X_2\,(X_2^\top X_2)^{-1} X_2^\top X_1\Big)\hat\beta_1
+   \;=\;
+   X_1^\top y \;-\; X_1^\top X_2\,(X_2^\top X_2)^{-1} X_2^\top y.
+   \]"
+   Verification:
+   - Correct. Algebraically equivalent to the previous displayed equation after moving the term involving β̂1 to the left and the remaining term to the right.
+
+7. Quoted text:
+   "Define the projection matrix onto $\operatorname{col}(X_2)$ by
+   \[
+   P_2 := X_2(X_2^\top X_2)^{-1}X_2^\top,
+   \]
+   and the residual-maker (annihilator) matrix by
+   \[
+   M_2 := I_n - P_2.
+   \]"
+   Verification:
+   - Correct. These are the standard definitions.
+
+8. Quoted text:
+   "From these definitions,
+   \[
+   X_1^\top X_2\,(X_2^\top X_2)^{-1} X_2^\top X_1 = X_1^\top P_2 X_1,
+   \qquad
+   X_1^\top X_2\,(X_2^\top X_2)^{-1} X_2^\top y = X_1^\top P_2 y,
+   \]
+   hence the previous equation is
+   \[
+   \big( X_1^\top X_1 - X_1^\top P_2 X_1 \big)\hat\beta_1 = X_1^\top y - X_1^\top P_2 y.
+   \]"
+   Verification:
+   - Correct. Straight substitution using the definition of P2.
+
+9. Quoted text:
+   "Equivalently,
+   \[
+   X_1^\top (I_n - P_2) X_1\,\hat\beta_1 \;=\; X_1^\top (I_n - P_2) y,
+   \]
+   so
+   \[
+   X_1^\top M_2 X_1\,\hat\beta_1 \;=\; X_1^\top M_2 y.
+   \]"
+   Verification:
+   - Correct. M2 = I - P2 gives the stated equivalence.
+
+10. Quoted text:
+    "It remains to show $X_1^\top M_2 X_1$ is invertible. First note basic properties of $P_2$ and $M_2$:
+
+    - $P_2$ is symmetric and idempotent: $P_2^\top = P_2$ and $P_2^2 = P_2$; hence $M_2^\top = M_2$ and $M_2^2 = M_2$.
+    - $P_2$ projects onto $\operatorname{col}(X_2)$, so $P_2 X_2 = X_2$ and therefore $M_2 X_2 = 0$."
+    Verification:
+    - Correct. For P2 as defined, P2^T = P2 and P2^2 = P2 follow directly. Then M2 = I - P2 is symmetric and idempotent as well: (I-P2)^T = I-P2, and (I-P2)^2 = I - 2P2 + P2^2 = I - P2. The statement P2 X2 = X2 is immediate from the formula for P2, and so M2 X2 = 0.
+
+11. Quoted text:
+    "For any nonzero vector $v\in\mathbb{R}^{k_1}$,
+    \[
+    v^\top (X_1^\top M_2 X_1) v \;=\; (X_1 v)^\top M_2 (X_1 v) \;=\; \|M_2 X_1 v\|_2^2 \ge 0.
+    \]"
+    Verification:
+    - Correct. The first equality is just rearranging: v^T X1^T M2 X1 v = (X1 v)^T M2 (X1 v). The second equality uses that M2 is symmetric and idempotent, so for any vector z, z^T M2 z = (M2 z)^T (M2 z) = ||M2 z||^2. Thus the quadratic form is nonnegative.
+
+12. Quoted text:
+    "If $\|M_2 X_1 v\|_2^2 = 0$ then $M_2 X_1 v = 0$, hence $X_1 v \in \operatorname{col}(X_2)$. Thus there exists $w\in\mathbb{R}^{k_2}$ with $X_1 v = X_2 w$, so
+    \[
+    X_1 v - X_2 w = 0.
+    \]"
+    Verification:
+    - Correct. Kernel(M2) = col(X2) (since M2 = I - P2 and P2 projects onto col(X2)), so M2 z = 0 iff z ∈ col(X2). Therefore existence of w such that X1 v = X2 w follows. The displayed equation is immediate.
+
+13. Quoted text:
+    "If $v\neq 0$ this is a nontrivial linear relation among the columns of $[X_1\ X_2]$. That contradicts the assumption $\operatorname{rank}(X)=k_1+k_2$. Therefore for all $v\neq 0$ we have $v^\top X_1^\top M_2 X_1 v > 0$, so $X_1^\top M_2 X_1$ is positive definite and hence invertible."
+    Verification:
+    - Correct. The argument shows that if X1 v were in col(X2) with v ≠ 0, then columns of [X1 X2] would be linearly dependent, contradicting the full column rank assumption rank(X)=k1+k2. Hence the quadratic form is strictly positive for all nonzero v, proving positive definiteness and invertibility.
+
+14. Quoted text:
+    "Multiplying both sides of $X_1^\top M_2 X_1\,\hat\beta_1 = X_1^\top M_2 y$ by the inverse yields
+    \[
+    \hat\beta_1 \;=\; (X_1^\top M_2 X_1)^{-1} X_1^\top M_2 y,
+    \]
+    which completes the proof."
+    Verification:
+    - Correct. Given the invertibility just established, postmultiplying by the inverse gives the boxed formula.
+
+Conclusion: Each step is valid and justified. The solution proceeds by standard manipulations of the normal equations, uses correct properties of projection matrices, and provides a correct argument for invertibility of X1^T M2 X1 under the given rank assumptions. No logical gaps or incorrect assertions were found.
+>>>>>>> Verification results:
+yes
+>>>>>>>Bug report:
+>>>>>>> Is verification good?
+(empty)
+>>>>>>> Initial verification:
+>>>>>>> verify results: yes
+(empty)
+>>>>>>> Verify the solution.
+>>>>>>> Start verification.
+>>>>>>> Verification results:
+Summary
+
+Final Verdict: The solution is correct.
+
+List of Findings:
+- No issues found.
+
+Detailed Verification Log
+
+I will go through the solution step by step, quoting the relevant text and providing a verification or justification for each step.
+
+1. Quoted text:
+   "Let \hat\beta=(\hat\beta_1^\top,\hat\beta_2^\top)^\top be the ordinary least squares estimator ... The normal equations are
+   X^\top X\,\hat\beta = X^\top y."
+
+   Verification:
+   - Correct. The OLS estimator satisfies the normal equations X^T X \hat\beta = X^T y when X has full column rank (which is assumed). This is standard.
+
+2. Quoted text:
+   "Partitioning according to X=[X_1 X_2] and \hat\beta=(\hat\beta_1^\top,\hat\beta_2^\top)^\top yields the block system
+   ( [X_1^\top X_1  X_1^\top X_2; X_2^\top X_1  X_2^\top X_2] ) ( \hat\beta_1; \hat\beta_2 ) = ( X_1^\top y; X_2^\top y )."
+
+   Verification:
+   - Correct. Multiplying out the block partition of X^T X and matching blocks yields the stated system.
+
+3. Quoted text:
+   "Because rank(X_2)=k_2, the Gram matrix X_2^\top X_2 is invertible. The second block row gives
+   X_2^\top X_1 \hat\beta_1 + X_2^\top X_2 \hat\beta_2 = X_2^\top y,
+   so
+   \hat\beta_2 = (X_2^\top X_2)^{-1}( X_2^\top y - X_2^\top X_1 \hat\beta_1 )."
+
+   Verification:
+   - Correct. The invertibility follows from full column rank of X_2. Solving the second block row for \hat\beta_2 is straightforward algebra.
+
+4. Quoted text:
+   "Substitute this expression for \hat\beta_2 into the first block row: ... which becomes
+   X_1^\top X_1 \hat\beta_1 + X_1^\top X_2 (X_2^\top X_2)^{-1}( X_2^\top y - X_2^\top X_1 \hat\beta_1 ) = X_1^\top y."
+
+   Verification:
+   - Correct substitution and straightforward algebraic expansion.
+
+5. Quoted text:
+   "Rearrange to collect terms multiplied by \hat\beta_1:
+   ( X_1^\top X_1 - X_1^\top X_2 (X_2^\top X_2)^{-1} X_2^\top X_1 ) \hat\beta_1 = X_1^\top y - X_1^\top X_2 (X_2^\top X_2)^{-1} X_2^\top y."
+
+   Verification:
+   - Correct. This is algebraic rearrangement collecting \hat\beta_1 terms on the left and remaining terms on the right.
+
+6. Quoted text:
+   "Define P_2 := X_2 (X_2^\top X_2)^{-1} X_2^\top, M_2 := I_n - P_2. From these definitions,
+   X_1^\top X_2 (X_2^\top X_2)^{-1} X_2^\top X_1 = X_1^\top P_2 X_1,
+   X_1^\top X_2 (X_2^\top X_2)^{-1} X_2^\top y = X_1^\top P_2 y."
+
+   Verification:
+   - Correct identifications using the definition of P_2.
+
+7. Quoted text:
+   "hence the previous equation is
+   ( X_1^\top X_1 - X_1^\top P_2 X_1 ) \hat\beta_1 = X_1^\top y - X_1^\top P_2 y.
+   Equivalently,
+   X_1^\top (I_n - P_2) X_1 \hat\beta_1 = X_1^\top (I_n - P_2) y,
+   so
+   X_1^\top M_2 X_1 \hat\beta_1 = X_1^\top M_2 y."
+
+   Verification:
+   - Correct. Rewriting X_1^T X_1 - X_1^T P_2 X_1 as X_1^T (I - P_2) X_1 is algebraically valid, and substituting M_2 = I - P_2 yields the displayed equation.
+
+8. Quoted text:
+   "It remains to show X_1^\top M_2 X_1 is invertible. First note basic properties of P_2 and M_2:
+   - P_2 is symmetric and idempotent: P_2^\top = P_2 and P_2^2 = P_2; hence M_2^\top = M_2 and M_2^2 = M_2.
+   - P_2 projects onto col(X_2), so P_2 X_2 = X_2 and therefore M_2 X_2 = 0."
+
+   Verification:
+   - Correct. For P_2 = X_2 (X_2^T X_2)^{-1} X_2^T, symmetry and idempotence are standard properties of such projection matrices. From M_2 = I - P_2, symmetry and idempotence follow: (I-P)^T = I-P and (I-P)^2 = I-2P+P^2 = I-P when P^2 = P. P_2 X_2 = X_2 follows since (X_2 (X_2^T X_2)^{-1} X_2^T) X_2 = X_2, and thus M_2 X_2 = X_2 - P_2 X_2 = 0.
+
+9. Quoted text:
+   "For any nonzero vector v\in\mathbb{R}^{k_1},
+   v^\top (X_1^\top M_2 X_1) v = (X_1 v)^\top M_2 (X_1 v) = \|M_2 X_1 v\|_2^2 \ge 0."
+
+   Verification:
+   - Correct. Symmetry of M_2 ensures the quadratic form equals (X_1 v)^T M_2 (X_1 v). Since M_2 is symmetric and idempotent, it is positive semidefinite, and (X_1 v)^T M_2 (X_1 v) = ||M_2 X_1 v||^2 is nonnegative.
+
+10. Quoted text:
+    "If \|M_2 X_1 v\|_2^2 = 0 then M_2 X_1 v = 0, hence X_1 v \in \operatorname{col}(X_2). Thus there exists w\in\mathbb{R}^{k_2} with X_1 v = X_2 w, so
+    X_1 v - X_2 w = 0.
+    If v\neq 0 this is a nontrivial linear relation among the columns of [X_1 X_2]. That contradicts the assumption rank(X)=k_1+k_2. Therefore for all v\neq 0 we have v^\top X_1^\top M_2 X_1 v > 0, so X_1^\top M_2 X_1 is positive definite and hence invertible."
+
+    Verification:
+    - Correct and fully rigorous. The implication M_2 x = 0 => x in col(X_2) is valid because M_2 is the orthogonal projection onto the orthogonal complement of col(X_2); equivalently, M_2 x = 0 exactly when x = P_2 x ∈ col(X_2). From X_1 v ∈ col(X_2) with v ≠ 0, existence of w with X_1 v = X_2 w is immediate. The equation X_1 v - X_2 w = 0 yields a nontrivial linear combination of the columns of [X_1 X_2] equaling zero (the coefficients are the entries of v and -w, not all zero because v ≠ 0), contradicting the full-column-rank assumption. Hence no nonzero v can produce zero quadratic form, so the matrix is positive definite and invertible.
+
+    - Note: The argument uses the stated assumption rank(X)=k_1+k_2; this assumption was explicitly given in the problem, so the contradiction is valid.
+
+11. Quoted text:
+    "Multiplying both sides of X_1^\top M_2 X_1 \hat\beta_1 = X_1^\top M_2 y by the inverse yields
+    \hat\beta_1 = (X_1^\top M_2 X_1)^{-1} X_1^\top M_2 y, which completes the proof."
+
+    Verification:
+    - Correct. Given invertibility, multiplying by the inverse gives the stated expression.
+
+Conclusion:
+- Each step is correct and justified. There are no gaps in logic or unjustified claims. The proof explicitly uses the given assumptions (in particular, rank(X_2)=k_2 and rank(X)=k_1+k_2) where needed, and the algebraic manipulations and linear-algebraic facts invoked are standard and correctly applied.
+>>>>>>> Is verification good?
+yes
+>>>>>>>Bug report:
+>>>>>>> Solution is good, verifying again ...
+>>>>>>> Verify the solution.
+>>>>>>> Start verification.
+(empty)
+Summary
+
+Final Verdict: The solution is correct.
+
+List of Findings:
+- No issues found. All steps are valid and rigorously justified.
+
+Detailed Verification Log
+
+I will follow the solution step by step, quoting the relevant text and verifying the correctness and rigor of each step.
+
+1. Quoted: "Let \hat\beta=(\hat\beta_1^\top,\hat\beta_2^\top)^\top be the ordinary least squares estimator from regressing y\in\mathbb{R}^n on X=[X_1\ X_2] ... The normal equations are X^\top X\,\hat\beta = X^\top y."
+
+   Verification: Correct. This is the standard normal-equation characterization of the OLS estimator when X has full column rank.
+
+2. Quoted: "Partitioning according to X=[X_1\ X_2] and \hat\beta=(\hat\beta_1^\top,\hat\beta_2^\top)^\top yields the block system
+   ( X_1^\top X_1  X_1^\top X_2
+     X_2^\top X_1  X_2^\top X_2 ) ( \hat\beta_1 \\ \hat\beta_2 ) = ( X_1^\top y \\ X_2^\top y )."
+
+   Verification: Correct. This is a straightforward block partition of X^\top X and X^\top y consistent with the partition of X and \hat\beta.
+
+3. Quoted: "Because rank(X_2)=k_2, the Gram matrix X_2^\top X_2 is invertible. The second block row gives X_2^\top X_1\,\hat\beta_1 + X_2^\top X_2\,\hat\beta_2 = X_2^\top y, so \hat\beta_2 = (X_2^\top X_2)^{-1}( X_2^\top y - X_2^\top X_1\,\hat\beta_1)."
+
+   Verification: Correct. Full column rank of X_2 implies X_2^\top X_2 is positive definite and invertible; solving the second block row for \hat\beta_2 is algebraically correct.
+
+4. Quoted: "Substitute this expression for \hat\beta_2 into the first block row: X_1^\top X_1\,\hat\beta_1 + X_1^\top X_2\,\hat\beta_2 = X_1^\top y, which becomes ..."
+
+   Verification: Correct. Substitution is correctly performed, yielding the displayed expression.
+
+5. Quoted: "Rearrange to collect terms multiplied by \hat\beta_1:
+   ( X_1^\top X_1 - X_1^\top X_2 (X_2^\top X_2)^{-1} X_2^\top X_1 ) \hat\beta_1 = X_1^\top y - X_1^\top X_2 (X_2^\top X_2)^{-1} X_2^\top y."
+
+   Verification: Correct. Algebraic rearrangement is valid.
+
+6. Quoted: "Define P_2 := X_2 (X_2^\top X_2)^{-1} X_2^\top and M_2 := I_n - P_2. From these definitions, X_1^\top X_2 (X_2^\top X_2)^{-1} X_2^\top X_1 = X_1^\top P_2 X_1, X_1^\top X_2 (X_2^\top X_2)^{-1} X_2^\top y = X_1^\top P_2 y, hence the previous equation is ..."
+
+   Verification: Correct. The equalities are simple substitutions of the definition of P_2.
+
+7. Quoted: "Equivalently, X_1^\top (I_n - P_2) X_1 \hat\beta_1 = X_1^\top (I_n - P_2) y, so X_1^\top M_2 X_1 \hat\beta_1 = X_1^\top M_2 y."
+
+   Verification: Correct. This follows directly from factoring X_1^\top and applying M_2 = I_n - P_2.
+
+8. Quoted: "It remains to show X_1^\top M_2 X_1 is invertible. First note basic properties of P_2 and M_2:
+   - P_2 is symmetric and idempotent: P_2^\top = P_2 and P_2^2 = P_2; hence M_2^\top = M_2 and M_2^2 = M_2.
+   - P_2 projects onto col(X_2), so P_2 X_2 = X_2 and therefore M_2 X_2 = 0."
+
+   Verification:
+   - The statements about P_2 are standard: P_2 = X_2 (X_2^\top X_2)^{-1} X_2^\top is symmetric (transpose equals itself) and idempotent (P_2^2 = P_2), since X_2^\top X_2 is invertible. From M_2 = I - P_2, symmetry and idempotence of P_2 imply symmetry of M_2 and idempotence of M_2 (M_2^2 = (I-P_2)^2 = I - 2P_2 + P_2^2 = I - P_2 = M_2). All statements are correct and justified.
+   - P_2 X_2 = X_2 is immediate from the definition, implying M_2 X_2 = 0. Correct.
+
+9. Quoted: "For any nonzero vector v\in\mathbb{R}^{k_1}, v^\top (X_1^\top M_2 X_1) v = (X_1 v)^\top M_2 (X_1 v) = \|M_2 X_1 v\|_2^2 \ge 0."
+
+   Verification: Correct. The equality (X_1 v)^\top M_2 (X_1 v) = (M_2 X_1 v)^\top (M_2 X_1 v) uses symmetry and idempotence of M_2: (Xu)^T M2 (Xu) = (M2 Xu)^T (M2 Xu) because M2 = M2^T = M2^2. Hence it equals the squared Euclidean norm and is nonnegative.
+
+10. Quoted: "If \|M_2 X_1 v\|_2^2 = 0 then M_2 X_1 v = 0, hence X_1 v \in col(X_2). Thus there exists w\in\mathbb{R}^{k_2} with X_1 v = X_2 w, so X_1 v - X_2 w = 0."
+
+    Verification: Correct. Kernel of M_2 equals col(X_2), so M_2 X_1 v = 0 implies X_1 v \in col(X_2); existence of such w follows.
+
+11. Quoted: "If v\neq 0 this is a nontrivial linear relation among the columns of [X_1\ X_2]. That contradicts the assumption rank(X)=k_1+k_2. Therefore for all v\neq 0 we have v^\top X_1^\top M_2 X_1 v > 0, so X_1^\top M_2 X_1 is positive definite and hence invertible."
+
+    Verification: Correct. The argument shows that any nonzero v with M_2 X_1 v = 0 would produce a nontrivial linear dependence among columns of [X_1 X_2], contradicting full column rank. Therefore M_2 X_1 v ≠ 0 for all v ≠ 0, so the quadratic form is strictly positive definite, hence the matrix is invertible. This is rigorous.
+
+12. Quoted: "Multiplying both sides of X_1^\top M_2 X_1\,\hat\beta_1 = X_1^\top M_2 y by the inverse yields \hat\beta_1 = (X_1^\top M_2 X_1)^{-1} X_1^\top M_2 y, which completes the proof."
+
+    Verification: Correct. Having established invertibility, multiplying by the inverse is valid and yields the desired formula.
+
+Conclusion: Every step of the provided solution is valid, justified, and logically complete. No critical errors or justification gaps are present. The proof correctly derives the Frisch–Waugh–Lovell formula for \hat\beta_1.
+>>>>>>> Verification results:
+yes
+>>>>>>> Solution is good, verifying again ...
+>>>>>>> Is verification good?
+(empty)
+>>>>>>> Verify the solution.
+>>>>>>>Bug report:
+>>>>>>> Start verification.
+>>>>>>> Verification results:
+Summary
+
+Final Verdict: The solution is correct.
+
+List of Findings:
+- No issues found. All steps are valid and sufficiently justified for a rigorous proof at this level.
+
+Detailed Verification Log
+
+I will check the solution line-by-line (quoting the relevant text before commenting).
+
+1. Quoted text:
+   "Let \hat\beta=(\hat\beta_1^\top,\hat\beta_2^\top)^\top be the ordinary least squares estimator from regressing y\in\mathbb{R}^n on X=[X_1\ X_2] ... The normal equations are
+   X^\top X\,\hat\beta = X^\top y."
+
+   Verification:
+   - Correct. The normal equations for OLS with full column rank X are X^T X \hat\beta = X^T y. The statement is standard and requires no further justification.
+
+2. Quoted text:
+   "Partitioning according to X=[X_1\ X_2] and \hat\beta=(\hat\beta_1^\top,\hat\beta_2^\top)^\top yields the block system
+   ( [X_1^\top X_1  X_1^\top X_2; X_2^\top X_1  X_2^\top X_2] ) ( \hat\beta_1 ; \hat\beta_2 ) = ( X_1^\top y ; X_2^\top y )."
+
+   Verification:
+   - Correct. Multiplying out the block matrix equation gives exactly the two scalar block equations corresponding to the partition.
+
+3. Quoted text:
+   "Because rank(X_2)=k_2, the Gram matrix X_2^\top X_2 is invertible. The second block row gives
+   X_2^\top X_1 \hat\beta_1 + X_2^\top X_2 \hat\beta_2 = X_2^\top y,
+   so
+   \hat\beta_2 = (X_2^\top X_2)^{-1}( X_2^\top y - X_2^\top X_1 \hat\beta_1 )."
+
+   Verification:
+   - Correct. rank(X_2)=k_2 implies X_2 has full column rank and X_2^T X_2 is positive definite and invertible. Solving the second block equation for \hat\beta_2 is algebraically valid.
+
+4. Quoted text:
+   "Substitute this expression for \hat\beta_2 into the first block row:
+   X_1^\top X_1 \hat\beta_1 + X_1^\top X_2 \hat\beta_2 = X_1^\top y,
+   which becomes
+   X_1^\top X_1 \hat\beta_1 + X_1^\top X_2 (X_2^\top X_2)^{-1}( X_2^\top y - X_2^\top X_1 \hat\beta_1 ) = X_1^\top y."
+
+   Verification:
+   - Correct algebraic substitution.
+
+5. Quoted text:
+   "Rearrange to collect terms multiplied by \hat\beta_1:
+   ( X_1^\top X_1 - X_1^\top X_2 (X_2^\top X_2)^{-1} X_2^\top X_1 ) \hat\beta_1 = X_1^\top y - X_1^\top X_2 (X_2^\top X_2)^{-1} X_2^\top y."
+
+   Verification:
+   - Correct. Straightforward distribution and moving terms yields the displayed equation.
+
+6. Quoted text:
+   "Define the projection matrix onto col(X_2) by P_2 := X_2 (X_2^\top X_2)^{-1} X_2^\top, and M_2 := I_n - P_2. From these definitions,
+   X_1^\top X_2 (X_2^\top X_2)^{-1} X_2^\top X_1 = X_1^\top P_2 X_1,
+   X_1^\top X_2 (X_2^\top X_2)^{-1} X_2^\top y = X_1^\top P_2 y,
+   hence the previous equation is
+   ( X_1^\top X_1 - X_1^\top P_2 X_1 ) \hat\beta_1 = X_1^\top y - X_1^\top P_2 y."
+
+   Verification:
+   - Correct. These equalities follow by substituting the definition of P_2 and associativity of matrix multiplication. No issue.
+
+7. Quoted text:
+   "Equivalently,
+   X_1^\top (I_n - P_2) X_1 \hat\beta_1 = X_1^\top (I_n - P_2) y,
+   so
+   X_1^\top M_2 X_1 \hat\beta_1 = X_1^\top M_2 y."
+
+   Verification:
+   - Correct. This is just factoring X_1^T and using M_2 = I - P_2.
+
+8. Quoted text:
+   "It remains to show X_1^\top M_2 X_1 is invertible. First note basic properties of P_2 and M_2:
+   - P_2 is symmetric and idempotent: P_2^\top = P_2 and P_2^2 = P_2; hence M_2^\top = M_2 and M_2^2 = M_2.
+   - P_2 projects onto col(X_2), so P_2 X_2 = X_2 and therefore M_2 X_2 = 0."
+
+   Verification:
+   - Correct. P_2 is the usual orthogonal projection onto col(X_2) when X_2 has full column rank; it is symmetric and idempotent. Then M_2 = I - P_2 inherits symmetry and idempotency since (I-P)^T = I - P^T = I - P and (I-P)^2 = I - 2P + P^2 = I - P. Also P_2 X_2 = X_2 follows directly from the projection formula, and M_2 X_2 = (I-P_2)X_2 = 0.
+
+   Minor remark (not an issue): the text uses "hence M_2^2 = M_2" which is algebraically correct given P_2^2 = P_2.
+
+9. Quoted text:
+   "For any nonzero vector v\in\mathbb{R}^{k_1},
+   v^\top (X_1^\top M_2 X_1) v = (X_1 v)^\top M_2 (X_1 v) = \|M_2 X_1 v\|_2^2 \ge 0."
+
+   Verification:
+   - Correct. Compute v^T X_1^T M_2 X_1 v = (X_1 v)^T M_2 (X_1 v). Because M_2 is symmetric idempotent, (X_1 v)^T M_2 (X_1 v) = (M_2 X_1 v)^T (M_2 X_1 v) = ||M_2 X_1 v||^2 >= 0. This establishes positive semidefiniteness.
+
+10. Quoted text:
+    "If \|M_2 X_1 v\|_2^2 = 0 then M_2 X_1 v = 0, hence X_1 v \in col(X_2). Thus there exists w\in\mathbb{R}^{k_2} with X_1 v = X_2 w, so
+    X_1 v - X_2 w = 0.
+    If v\neq 0 this is a nontrivial linear relation among the columns of [X_1\ X_2]. That contradicts the assumption rank(X)=k_1+k_2. Therefore for all v\neq 0 we have v^\top X_1^\top M_2 X_1 v > 0, so X_1^\top M_2 X_1 is positive definite and hence invertible."
+
+    Verification:
+    - Correct and sufficiently justified. More explicitly:
+      - From M_2 X_1 v = 0 it follows X_1 v = P_2 X_1 v ∈ col(X_2) because ker(M_2) = col(X_2) (equivalently, z ∈ ker(M_2) iff P_2 z = z). The existence of w is then immediate.
+      - The equality X_1 v = X_2 w represents a linear dependence among columns of [X_1 X_2]. If v ≠ 0, at least one column of X_1 participates, producing a nontrivial linear relation. Given the hypothesis rank(X) = k_1 + k_2 (full column rank), this is impossible. Thus M_2 X_1 v cannot be zero for v ≠ 0, so the quadratic form is strictly positive for all v ≠ 0. Hence X_1^T M_2 X_1 is positive definite and invertible.
+    - This reasoning addresses kernel characterization and uses the full column rank hypothesis correctly—no gap.
+
+11. Quoted text:
+    "Multiplying both sides of X_1^\top M_2 X_1 \hat\beta_1 = X_1^\top M_2 y by the inverse yields
+    \hat\beta_1 = (X_1^\top M_2 X_1)^{-1} X_1^\top M_2 y,
+    which completes the proof."
+
+    Verification:
+    - Correct. Having established invertibility, multiplying by the inverse yields the displayed formula.
+
+Conclusion: Each step is logically valid and adequately justified. There are no missing critical arguments nor substantive justification gaps. The solution cleanly derives the partial-out formula for \hat\beta_1 and proves invertibility of X_1^T M_2 X_1 using full column rank of X.
+>>>>>>> Is verification good?
+>>>>>>> Solution is good, verifying again ...
+>>>>>>> Start verification.
+(empty)
+>>>>>>> Verify the solution.
+yes
+>>>>>>>Bug report:
+Summary
+
+Final Verdict: The solution is correct.
+
+List of Findings:
+- No errors or unjustified steps were found; every step in the solution is valid and rigorously justified.
+
+Detailed Verification Log
+
+I will go through the solution step by step, quoting the relevant text and then providing a short justification for correctness.
+
+1. Quoted text:
+   "Let $\hat\beta=(\hat\beta_1^\top,\hat\beta_2^\top)^\top$ be the ordinary least squares estimator from regressing $y\in\mathbb{R}^n$ on $X=[X_1\ X_2]$ ... The normal equations are
+   \[
+   X^\top X\,\hat\beta \;=\; X^\top y.
+   \]"
+   Verification:
+   - This is the standard normal-equation formulation for OLS when X has full column rank. Given the setup, this is correct.
+
+2. Quoted text:
+   "Partitioning according to $X=[X_1\ X_2]$ and $\hat\beta=(\hat\beta_1^\top,\hat\beta_2^\top)^\top$ yields the block system
+   \[
+   \begin{pmatrix}
+   X_1^\top X_1 & X_1^\top X_2\\[6pt]
+   X_2^\top X_1 & X_2^\top X_2
+   \end{pmatrix}
+   \begin{pmatrix}\hat\beta_1\\[6pt]\hat\beta_2\end{pmatrix}
+   \;=\;
+   \begin{pmatrix}X_1^\top y\\[6pt]X_2^\top y\end{pmatrix}.
+   \]"
+   Verification:
+   - Multiplying out block matrices is routine and correctly produces the two-block normal equations. This step is correct.
+
+3. Quoted text:
+   "Because $\operatorname{rank}(X_2)=k_2$, the Gram matrix $X_2^\top X_2$ is invertible. The second block row gives
+   \[
+   X_2^\top X_1\,\hat\beta_1 \;+\; X_2^\top X_2\,\hat\beta_2 \;=\; X_2^\top y,
+   \]
+   so
+   \[
+   \hat\beta_2 \;=\; (X_2^\top X_2)^{-1}\big( X_2^\top y - X_2^\top X_1\,\hat\beta_1\big).
+   \]"
+   Verification:
+   - Rank(X2) = k2 implies X_2 has full column rank, so X_2^T X_2 is symmetric positive definite and invertible. Solving the second block row for hat beta_2 by multiplying by the inverse is algebraically valid.
+
+4. Quoted text:
+   "Substitute this expression for $\hat\beta_2$ into the first block row:
+   \[
+   X_1^\top X_1\,\hat\beta_1 \;+\; X_1^\top X_2\,\hat\beta_2 \;=\; X_1^\top y,
+   \]
+   which becomes
+   \[
+   X_1^\top X_1\,\hat\beta_1 \;+\; X_1^\top X_2\,(X_2^\top X_2)^{-1}\big( X_2^\top y - X_2^\top X_1\,\hat\beta_1\big)
+   \;=\; X_1^\top y.
+   \]"
+   Verification:
+   - Direct substitution is correctly performed; algebra is straightforward and correct.
+
+5. Quoted text:
+   "Rearrange to collect terms multiplied by $\hat\beta_1$:
+   \[
+   \Big( X_1^\top X_1 \;-\; X_1^\top X_2\,(X_2^\top X_2)^{-1} X_2^\top X_1\Big)\hat\beta_1
+   \;=\;
+   X_1^\top y \;-\; X_1^\top X_2\,(X_2^\top X_2)^{-1} X_2^\top y.
+   \]"
+   Verification:
+   - Simple algebraic rearrangement; signs and factors are correct.
+
+6. Quoted text:
+   "Define the projection matrix onto $\operatorname{col}(X_2)$ by
+   \[
+   P_2 := X_2(X_2^\top X_2)^{-1}X_2^\top,
+   \]
+   and the residual-maker (annihilator) matrix by
+   \[
+   M_2 := I_n - P_2.
+   \]
+   From these definitions,
+   \[
+   X_1^\top X_2\,(X_2^\top X_2)^{-1} X_2^\top X_1 = X_1^\top P_2 X_1,
+   \qquad
+   X_1^\top X_2\,(X_2^\top X_2)^{-1} X_2^\top y = X_1^\top P_2 y,
+   \]
+   hence the previous equation is
+   \[
+   \big( X_1^\top X_1 - X_1^\top P_2 X_1 \big)\hat\beta_1 = X_1^\top y - X_1^\top P_2 y.
+   \]"
+   Verification:
+   - The definitions are standard and the equalities are direct substitutions; correct.
+
+7. Quoted text:
+   "Equivalently,
+   \[
+   X_1^\top (I_n - P_2) X_1\,\hat\beta_1 \;=\; X_1^\top (I_n - P_2) y,
+   \]
+   so
+   \[
+   X_1^\top M_2 X_1\,\hat\beta_1 \;=\; X_1^\top M_2 y.
+   \]"
+   Verification:
+   - This is merely rewriting previous line using M_2 = I_n - P_2. Correct.
+
+8. Quoted text:
+   "It remains to show $X_1^\top M_2 X_1$ is invertible. First note basic properties of $P_2$ and $M_2$:
+
+   - $P_2$ is symmetric and idempotent: $P_2^\top = P_2$ and $P_2^2 = P_2$; hence $M_2^\top = M_2$ and $M_2^2 = M_2$.
+   - $P_2$ projects onto $\operatorname{col}(X_2)$, so $P_2 X_2 = X_2$ and therefore $M_2 X_2 = 0$."
+   Verification:
+   - P_2 is of the form X_2(X_2^T X_2)^{-1}X_2^T and is the orthogonal projector onto col(X_2), so it is symmetric and idempotent. From M_2 = I - P_2, symmetry and idempotence properties follow as stated: M_2^T = I^T - P_2^T = I - P_2 = M_2, and M_2^2 = (I - P_2)^2 = I - 2P_2 + P_2^2 = I - P_2 = M_2 because P_2^2 = P_2. Also P_2 X_2 = X_2 and thus M_2 X_2 = 0. All assertions are correct.
+
+9. Quoted text:
+   "For any nonzero vector $v\in\mathbb{R}^{k_1}$,
+   \[
+   v^\top (X_1^\top M_2 X_1) v \;=\; (X_1 v)^\top M_2 (X_1 v) \;=\; \|M_2 X_1 v\|_2^2 \ge 0.
+   \]"
+   Verification:
+   - First equality: v^T X_1^T M_2 X_1 v = (X_1 v)^T M_2 (X_1 v) is standard for quadratic forms. Second equality: since M_2 is symmetric and idempotent, (X_1 v)^T M_2 (X_1 v) = (X_1 v)^T M_2^2 (X_1 v) = (M_2 X_1 v)^T (M_2 X_1 v) = ||M_2 X_1 v||^2. Thus the quadratic form is nonnegative. This is correct.
+
+10. Quoted text:
+    "If $\|M_2 X_1 v\|_2^2 = 0$ then $M_2 X_1 v = 0$, hence $X_1 v \in \operatorname{col}(X_2)$. Thus there exists $w\in\mathbb{R}^{k_2}$ with $X_1 v = X_2 w$, so
+    \[
+    X_1 v - X_2 w = 0.
+    \]
+    If $v\neq 0$ this is a nontrivial linear relation among the columns of $[X_1\ X_2]$. That contradicts the assumption $\operatorname{rank}(X)=k_1+k_2$. Therefore for all $v\neq 0$ we have $v^\top X_1^\top M_2 X_1 v > 0$, so $X_1^\top M_2 X_1$ is positive definite and hence invertible."
+    Verification:
+    - From M_2 X_1 v = 0 it follows X_1 v = P_2 X_1 v, i.e., X_1 v lies in col(X_2). So there exists w with X_1 v = X_2 w. If v ≠ 0, this expresses a nontrivial linear dependence among the columns of [X1 X2]. The hypothesis rank(X) = k1 + k2 forbids any such nontrivial relation, so no nonzero v can yield M_2 X_1 v = 0. Therefore v^T X_1^T M_2 X_1 v > 0 for all v ≠ 0, establishing positive-definiteness and invertibility. This chain of reasoning is correct and rigorous.
+
+11. Quoted text:
+    "Multiplying both sides of $X_1^\top M_2 X_1\,\hat\beta_1 = X_1^\top M_2 y$ by the inverse yields
+    \[
+    \hat\beta_1 \;=\; (X_1^\top M_2 X_1)^{-1} X_1^\top M_2 y,
+    \]
+    which completes the proof."
+    Verification:
+    - Given invertibility, multiplying by the inverse is valid and yields the boxed formula. This completes the derivation correctly.
+
+Conclusion:
+- Each algebraic manipulation and conceptual step (normal equations, block elimination, projector identities, positive-definiteness argument) is correct and justified. There are no logical gaps or unjustified assertions. The proof establishes existence of the inverse under the stated rank assumptions and derives the stated formula for hat beta_1 exactly.
+>>>>>>> Verification results:
+>>>>>>>Bug report:
+>>>>>>> Is verification good?
+>>>>>>> Correct solution found.
+(empty)
+yes
+>>>>>>> Solution is good, verifying again ...

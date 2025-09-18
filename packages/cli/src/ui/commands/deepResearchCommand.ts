@@ -40,7 +40,7 @@ export const deepResearchCommand: SlashCommand = {
     // UI banner so the user knows we switched contexts
     context.ui.addItem(
       {
-        type: 'warning',
+        type: 'info',
         text: 'Deep Research mode: we will summarize your request, ask brief clarifying questions, draft a research brief, then execute with the default provider/model.',
       },
       Date.now(),
@@ -101,13 +101,13 @@ Provider/model (fixed policy, env override):
 - Resolve from env like the proof helper: if DEEP_RESEARCH_MODEL is set to \`openai:o4-mini-deep-research-2025-06-26\` or \`openai:o3-deep-research-2025-06-26\`, use that; otherwise use the default.
 
 Example (OpenAI Responses API):
-  MODEL="${DEEP_RESEARCH_MODEL#openai:}"
-  [ -z "$MODEL" ] && MODEL="o4-mini-deep-research-2025-06-26"
+  MODEL="\${DEEP_RESEARCH_MODEL#openai:}"
+  [ -z "\$MODEL" ] && MODEL="o4-mini-deep-research-2025-06-26"
   curl -sS https://api.openai.com/v1/responses \\
-    -H "Authorization: Bearer $OPENAI_API_KEY" \\
+    -H "Authorization: Bearer \$OPENAI_API_KEY" \\
     -H "Content-Type: application/json" \\
     -d "{\
-      \"model\": \"$MODEL\",\
+      \"model\": \"\$MODEL\",\
       \"input\": [ { \"role\": \"user\", \"content\": \"<research brief or question>\" } ]\
     }"
 

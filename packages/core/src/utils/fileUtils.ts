@@ -372,7 +372,7 @@ export async function processSingleFileContent(
         const content = await readFileWithEncoding(filePath);
         return {
           llmContent: content,
-          returnDisplay: `Read SVG as text: ${relativePathForDisplay}`,
+          returnDisplay: 'Read file.',
         };
       }
       case 'text': {
@@ -406,17 +406,9 @@ export async function processSingleFileContent(
         const isTruncated = contentRangeTruncated || linesWereTruncatedInLength;
         const llmContent = formattedLines.join('\n');
 
-        // By default, return nothing to streamline the common case of a successful read_file.
-        let returnDisplay = '';
-        if (contentRangeTruncated) {
-          returnDisplay = `Read lines ${
-            actualStartLine + 1
-          }-${endLine} of ${originalLineCount} from ${relativePathForDisplay}`;
-          if (linesWereTruncatedInLength) {
-            returnDisplay += ' (some lines were shortened)';
-          }
-        } else if (linesWereTruncatedInLength) {
-          returnDisplay = `Read all ${originalLineCount} lines from ${relativePathForDisplay} (some lines were shortened)`;
+        let returnDisplay = 'Read file.';
+        if (contentRangeTruncated || linesWereTruncatedInLength) {
+          returnDisplay = 'Read file preview.';
         }
 
         return {
@@ -440,7 +432,7 @@ export async function processSingleFileContent(
               mimeType: mime.lookup(filePath) || 'application/octet-stream',
             },
           },
-          returnDisplay: `Read ${fileType} file: ${relativePathForDisplay}`,
+          returnDisplay: 'Read file.',
         };
       }
       default: {

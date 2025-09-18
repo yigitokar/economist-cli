@@ -150,8 +150,22 @@ class ProofHelperInvocation extends BaseToolInvocation<
       type: 'info',
       title: 'Run Proof Helper (long-running)',
       onConfirm: async () => {},
-      prompt:
-        'The proof helper can take a long time. Preferred usage: set an absolute problem_path (file or folder). Optional other_prompts can steer methods or constraints. Optional model override via PROOF_HELPER_MODEL env var (supports openai:<model> with OPENAI_API_KEY, GPT-5 models use the responses endpoint automatically). For GPT-5, set GPT5_REASONING_EFFORT=low/medium/high (default: low). It streams logs to .econ/proof-runs/<timestamp>/log.txt and writes the final solution to solution.md. You can continue in a new chat session while it runs.',
+      prompt: `Proof helper may run for a while.
+
+Required
+- Provide an absolute problem_path pointing to a file or folder.
+
+Optional tweaks
+- Pass other_prompts to steer the approach; they will also be saved to other_prompts.md.
+- Override the proof model via /set PROOF_HELPER_MODEL.
+- For GPT-5 runs, choose the reasoning effort with /set GPT5_REASONING_EFFORT low|medium|high (default: low).
+
+Outputs
+- other_prompts.md (only when other_prompts are provided)
+- Logs: .econ/proof-runs/<timestamp>/log.txt
+- Solution: .econ/proof-runs/<timestamp>/solution.md
+
+Tip: You can keep working in another chat while this finishes.`,
     };
   }
 
@@ -613,10 +627,17 @@ Response in exactly "yes" or "no". No other words.
       await fs.mkdir(runDir, { recursive: true });
       const problemPath = path.join(runDir, 'problem.txt');
       const promptsPath = path.join(runDir, 'other_prompts.json');
+      const promptsMarkdownPath = path.join(runDir, 'other_prompts.md');
       const logPath = path.join(runDir, 'log.txt');
       await fs.writeFile(problemPath, problem, 'utf-8');
       if (otherPrompts.length > 0) {
         await fs.writeFile(promptsPath, JSON.stringify(otherPrompts, null, 2), 'utf-8');
+        const markdown = ['# Additional prompts', ''];
+        for (const prompt of otherPrompts) {
+          markdown.push(`- ${prompt}`);
+        }
+        markdown.push('');
+        await fs.writeFile(promptsMarkdownPath, markdown.join('\n'), 'utf-8');
       }
 
       const appendLog = async (line: string) => {
