@@ -722,6 +722,7 @@ class Session {
       const toolArgs = {
         paths: pathSpecsToRead,
         respectGitIgnore, // Use configuration setting
+        suppress_ui_output: true,
       };
 
       const callId = `${readManyFilesTool.name}-${Date.now()}`;
@@ -729,15 +730,17 @@ class Session {
       try {
         const invocation = readManyFilesTool.build(toolArgs);
 
-        await this.sendUpdate({
-          sessionUpdate: 'tool_call',
-          toolCallId: callId,
-          status: 'in_progress',
-          title: invocation.getDescription(),
-          content: [],
-          locations: invocation.toolLocations(),
-          kind: readManyFilesTool.kind,
-        });
+        if (!toolArgs.suppress_ui_output) {
+          await this.sendUpdate({
+            sessionUpdate: 'tool_call',
+            toolCallId: callId,
+            status: 'in_progress',
+            title: invocation.getDescription(),
+            content: [],
+            locations: invocation.toolLocations(),
+            kind: readManyFilesTool.kind,
+          });
+        }
 
         const result = await invocation.execute(abortSignal);
         const content = toToolCallContent(result) || {
@@ -747,12 +750,14 @@ class Session {
             text: `Successfully read: ${contentLabelsForDisplay.join(', ')}`,
           },
         };
-        await this.sendUpdate({
-          sessionUpdate: 'tool_call_update',
-          toolCallId: callId,
-          status: 'completed',
-          content: content ? [content] : [],
-        });
+        if (!toolArgs.suppress_ui_output) {
+          await this.sendUpdate({
+            sessionUpdate: 'tool_call_update',
+            toolCallId: callId,
+            status: 'completed',
+            content: content ? [content] : [],
+          });
+        }
         if (Array.isArray(result.llmContent)) {
           const fileContentRegex = /^--- (.*?) ---\n\n([\s\S]*?)\n\n$/;
           processedQueryParts.push({

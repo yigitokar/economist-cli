@@ -25,7 +25,7 @@ const step1Prompt = `
     *   Fully resolving one or more cases within a logically sound case-based proof.
     *   Establishing a critical property of the mathematical objects in the problem.
     *   For an optimization problem, proving an upper or lower bound without proving that this bound is achievable.
-*   **Use TeX for All Mathematics:** All mathematical variables, expressions, and relations must be enclosed in TeX delimiters (e.g., \`Let $n$ be an integer.\`).
+*   **Use TeX for All Mathematics:** Wrap inline math in \`$...$\` and display equations in \`$$...$$\`. Do **not** use \`\\[\` or \`\\]\`. Example: \\\`Let $n$ be an integer.\\\` or \\\`$$f(x)=x^2$$\\\`.
 
 ### Output Format ###
 
@@ -45,7 +45,7 @@ Provide a concise overview of your findings. This section must contain two parts
 
 **2. Detailed Solution**
 
-Present the full, step-by-step mathematical proof. Each step must be logically justified and clearly explained. The level of detail should be sufficient for an expert to verify the correctness of your reasoning without needing to fill in any gaps. This section must contain ONLY the complete, rigorous proof, free of any internal commentary, alternative approaches, or failed attempts.
+Present the full, step-by-step mathematical proof. Each step must be logically justified and clearly explained. The level of detail should be sufficient for an expert to verify the correctness of your reasoning without needing to fill in any gaps. This section must contain ONLY the complete, rigorous proof, free of any internal commentary, alternative approaches, or failed attempts. Enclose this section between the markers <<<BEGIN DETAILED SOLUTION>>> and <<<END DETAILED SOLUTION>>>. Inside these markers, continue to format every mathematical expression using \`$...$\` or \`$$...$$\` (never \`\\[\` or \`\\]\`).
 
 ### Self-Correction Instruction ###
 
@@ -97,7 +97,7 @@ Your response MUST be structured into two main sections: a **Summary** followed 
         *   **Issue:** A brief description of the problem and its classification (**Critical Error** or **Justification Gap**).
 
 *   **b. Detailed Verification Log**
-    Following the summary, provide the full, step-by-step verification log as defined in the Core Instructions. When you refer to a specific part of the solution, **quote the relevant text** to make your reference clear before providing your detailed analysis of that part.
+    Following the summary, provide the full, step-by-step verification log as defined in the Core Instructions. When you refer to a specific part of the solution, **quote the relevant text** to make your reference clear before providing your detailed analysis of that part. Enclose the detailed log between the markers <<<BEGIN LOG>>> and <<<END LOG>>>.
 
 **Example of the Required Summary Format**
 *This is a generic example to illustrate the required format. Your findings must be based on the actual solution provided below.*
@@ -114,7 +114,7 @@ Your response MUST be structured into two main sections: a **Summary** followed 
 const verificationReminder = `
 ### Verification Task Reminder ###
 
-Your task is to act as an IMO grader. Now, generate the **summary** and the **step-by-step verification log** for the solution above. In your log, justify each correct step and explain in detail any errors or justification gaps you find, as specified in the instructions above.
+Your task is to act as an IMO grader. Now, generate the **summary** and the **step-by-step verification log** for the solution above. In your log, justify each correct step and explain in detail any errors or justification gaps you find, as specified in the instructions above. Remember to wrap the detailed log between <<<BEGIN LOG>>> and <<<END LOG>>> markers.
 `;
 
 // Parameters for the tool
@@ -152,12 +152,9 @@ class ProofHelperInvocation extends BaseToolInvocation<
       onConfirm: async () => {},
       prompt: `Proof helper may run for a while.
 
-Required
-- Provide an absolute problem_path pointing to a file or folder.
-
 Optional tweaks
 - Pass other_prompts to steer the approach; they will also be saved to other_prompts.md.
-- Override the proof model via /set PROOF_HELPER_MODEL.
+- Override the proof model via the model parameter or /set PROOF_HELPER_MODEL.
 - For GPT-5 runs, choose the reasoning effort with /set GPT5_REASONING_EFFORT low|medium|high (default: low).
 
 Outputs
@@ -205,30 +202,51 @@ Tip: You can keep working in another chat while this finishes.`,
     // Resolve provider and model from env if not yet set
     if (!this.effectiveModel) {
       const base = this.config.getContentGeneratorConfig();
-      const raw = process.env['PROOF_HELPER_MODEL']?.trim();
-      console.log(`[ProofHelper] PROOF_HELPER_MODEL env var: "${raw}"`);
-      if (raw && raw.toLowerCase().startsWith('openai:')) {
-        this.provider = 'openai';
-        this.effectiveModel = raw.slice('openai:'.length).trim();
-        console.log(`[ProofHelper] Using OpenAI provider with model: "${this.effectiveModel}"`);
-      } else if (raw && raw.length > 0) {
-        this.provider = 'gemini';
-        this.effectiveModel = raw;
-        console.log(`[ProofHelper] Using Gemini provider with model: "${this.effectiveModel}"`);
-      } else {
-        const openaiKey = process.env['OPENAI_API_KEY']?.trim();
-        if (openaiKey && openaiKey.length > 0) {
+      const override = this.params.model?.trim();
+      if (override) {
+        if (override.toLowerCase().startsWith('openai:')) {
           this.provider = 'openai';
-          this.effectiveModel = 'gpt-5-nano-2025-08-07';
+          this.effectiveModel = override.slice('openai:'.length).trim();
           console.log(
-            `[ProofHelper] Using default OpenAI model: "${this.effectiveModel}"`,
+            `[ProofHelper] Using OpenAI provider with override model: "${this.effectiveModel}"`,
           );
         } else {
           this.provider = 'gemini';
-          this.effectiveModel = base.model;
+          this.effectiveModel = override;
           console.log(
-            `[ProofHelper] Using default Gemini model: "${this.effectiveModel}"`,
+            `[ProofHelper] Using Gemini provider with override model: "${this.effectiveModel}"`,
           );
+        }
+      } else {
+        const raw = process.env['PROOF_HELPER_MODEL']?.trim();
+        console.log(`[ProofHelper] PROOF_HELPER_MODEL env var: "${raw}"`);
+        if (raw && raw.toLowerCase().startsWith('openai:')) {
+          this.provider = 'openai';
+          this.effectiveModel = raw.slice('openai:'.length).trim();
+          console.log(
+            `[ProofHelper] Using OpenAI provider with model: "${this.effectiveModel}"`,
+          );
+        } else if (raw && raw.length > 0) {
+          this.provider = 'gemini';
+          this.effectiveModel = raw;
+          console.log(
+            `[ProofHelper] Using Gemini provider with model: "${this.effectiveModel}"`,
+          );
+        } else {
+          const openaiKey = process.env['OPENAI_API_KEY']?.trim();
+          if (openaiKey && openaiKey.length > 0) {
+            this.provider = 'openai';
+            this.effectiveModel = 'gpt-5-nano-2025-08-07';
+            console.log(
+              `[ProofHelper] Using default OpenAI model: "${this.effectiveModel}"`,
+            );
+          } else {
+            this.provider = 'gemini';
+            this.effectiveModel = base.model;
+            console.log(
+              `[ProofHelper] Using default Gemini model: "${this.effectiveModel}"`,
+            );
+          }
         }
       }
     }
@@ -318,7 +336,7 @@ Tip: You can keep working in another chat while this finishes.`,
   private async generateViaOpenAI(
     systemInstruction: string,
     contents: Content[],
-    _abortSignal: AbortSignal,
+    abortSignal: AbortSignal,
   ): Promise<string> {
     const openaiModel = this.effectiveModel;
     if (!openaiModel || openaiModel.length === 0) {
@@ -326,13 +344,16 @@ Tip: You can keep working in another chat while this finishes.`,
     }
     const client = this.ensureOpenAIClient();
 
-    // Convert contents (Gemini-style) to OpenAI roles/messages
-    const messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [];
-    if (systemInstruction && systemInstruction.trim() !== '') {
-      messages.push({ role: 'system', content: systemInstruction });
-    }
+    const systemMsg = systemInstruction?.trim() ? systemInstruction.trim() : undefined;
+
+    const userAssistantMessages: Array<{
+      role: 'user' | 'assistant';
+      content: string;
+      type: 'message';
+    }> = [];
     for (const c of contents) {
-      const role = (c.role === 'model' ? 'assistant' : c.role) as 'user' | 'assistant';
+      const role = c.role === 'model' ? 'assistant' : 'user';
+      if (role !== 'user' && role !== 'assistant') continue;
       type TextLike = { text?: unknown };
       const textParts = (c.parts || [])
         .map((p) => {
@@ -341,7 +362,11 @@ Tip: You can keep working in another chat while this finishes.`,
         })
         .filter(Boolean) as string[];
       if (textParts.length > 0) {
-        messages.push({ role, content: textParts.join('\n\n') });
+        userAssistantMessages.push({
+          role,
+          content: textParts.join('\n\n'),
+          type: 'message',
+        });
       }
     }
 
@@ -355,14 +380,14 @@ Tip: You can keep working in another chat while this finishes.`,
         : defaultEffort;
 
       // Responses API expects "input" as an array of role/content items
-      const input = messages;
-
       const resp = await client.responses.create(
         {
           model: openaiModel,
           reasoning: { effort: reasoningEffort },
-          input,
-        }
+          instructions: systemMsg,
+          input: userAssistantMessages,
+        },
+        { signal: abortSignal },
       );
 
       // Try multiple access patterns for robustness across SDK versions
@@ -400,26 +425,93 @@ Tip: You can keep working in another chat while this finishes.`,
       return outputText;
     } else {
       // Use Chat Completions for non-GPT-5 models
-      const cc = await client.chat.completions.create({
-        model: openaiModel,
-        messages,
-        temperature: 0.1,
-        top_p: 1.0,
-      });
+      const baseMessages = userAssistantMessages.map(({ role, content }) => ({
+        role,
+        content,
+      }));
+
+      const chatMessages: Array<{
+        role: 'system' | 'user' | 'assistant';
+        content: string;
+      }> = systemMsg
+        ? [{ role: 'system', content: systemMsg }, ...baseMessages]
+        : baseMessages;
+
+      const cc = await client.chat.completions.create(
+        {
+          model: openaiModel,
+          messages: chatMessages,
+          temperature: 0.1,
+          top_p: 1.0,
+        },
+        { signal: abortSignal },
+      );
       return cc.choices?.[0]?.message?.content ?? '';
     }
 }
 
-  private extractDetailedSolution(
-    solution: string,
-    marker = 'Detailed Solution',
-    after = true,
+  private extractBetweenMarkers(
+    src: string,
+    begin: string,
+    end: string,
   ): string {
-    const idx = solution.indexOf(marker);
-    if (idx === -1) return '';
-    return after
-      ? solution.substring(idx + marker.length).trim()
-      : solution.substring(0, idx).trim();
+    const startIdx = src.indexOf(begin);
+    if (startIdx === -1) return '';
+    const endIdx = src.indexOf(end, startIdx + begin.length);
+    if (endIdx === -1) return '';
+    return src.substring(startIdx + begin.length, endIdx).trim();
+  }
+
+  private extractSection(src: string, header: string): string {
+    const escaped = header.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const re = new RegExp(
+      `^\\s*(?:[#>*\\d.()\\[\\]\\-]+\\s*)*${escaped}\\s*\\n+([\\s\\S]*)$`,
+      'im',
+    );
+    const match = src.match(re);
+    return match ? match[1].trim() : '';
+  }
+
+  private extractDetailedSolution(solution: string): string {
+    const tagged = this.extractBetweenMarkers(
+      solution,
+      '<<<BEGIN DETAILED SOLUTION>>>',
+      '<<<END DETAILED SOLUTION>>>',
+    );
+    if (tagged) {
+      return tagged;
+    }
+
+    const section = this.extractSection(solution, 'Detailed Solution');
+    if (section) {
+      return section;
+    }
+
+    const marker = 'detailed solution';
+    const lower = solution.toLowerCase();
+    const markerIdx = lower.indexOf(marker);
+    if (markerIdx !== -1) {
+      const newlineIdx = solution.indexOf('\n', markerIdx);
+      if (newlineIdx !== -1) {
+        return solution.substring(newlineIdx + 1).trim();
+      }
+      return solution.substring(markerIdx + marker.length).trim();
+    }
+
+    return solution.trim();
+  }
+
+  private extractDetailedVerificationLog(src: string): string {
+    const tagged = this.extractBetweenMarkers(src, '<<<BEGIN LOG>>>', '<<<END LOG>>>');
+    if (tagged) {
+      return tagged;
+    }
+    return this.extractSection(src, 'Detailed Verification Log');
+  }
+
+  private isYes(response: string): boolean {
+    const normalized = response.trim().toLowerCase();
+    return /^(yes|y)$/.test(normalized);
   }
 
   private async verifySolution(
@@ -480,12 +572,8 @@ ${verificationReminder}
     }
 
     let bugReport = '';
-    if (!yesNo.toLowerCase().includes('yes')) {
-      bugReport = this.extractDetailedSolution(
-        out,
-        'Detailed Verification',
-        /*after=*/ false,
-      );
+    if (!this.isYes(yesNo)) {
+      bugReport = this.extractDetailedVerificationLog(out) || out.trim();
     }
 
     if (verbose) {
@@ -516,7 +604,7 @@ Response in exactly "yes" or "no". No other words.
       [{ role: 'user', parts: [{ text: checkCompletePrompt }] }],
       abortSignal,
     );
-    return o.toLowerCase().includes('yes');
+    return this.isYes(o);
   }
 
   private async initExplorations(
@@ -562,9 +650,8 @@ Response in exactly "yes" or "no". No other words.
     if (verbose) {
       updateOutput?.('>>>>>>> Check if solution is complete:');
     }
-    // Note: Keeping the same structure as the original script (checks first output)
     const isComplete = await this.checkIfSolutionClaimedComplete(
-      first,
+      solution,
       abortSignal,
     );
     if (!isComplete) {
@@ -713,7 +800,7 @@ Response in exactly "yes" or "no". No other words.
                 `Number of iterations: ${i}, number of corrects: ${correctCount}, number of errors: ${errorCount}`,
               );
 
-            if (!verdictYesNo.toLowerCase().includes('yes')) {
+            if (!this.isYes(verdictYesNo)) {
               // clear
               correctCount = 0;
               errorCount += 1;
@@ -770,7 +857,7 @@ Response in exactly "yes" or "no". No other words.
             bugReport = verification.bugReport;
             verdictYesNo = verification.verdictYesNo;
 
-            if (verdictYesNo.toLowerCase().includes('yes')) {
+            if (this.isYes(verdictYesNo)) {
               logAndStream('>>>>>>> Solution is good, verifying again ...');
               correctCount += 1;
               errorCount = 0;
@@ -854,6 +941,11 @@ export class ProofHelperTool extends BaseDeclarativeTool<
             type: 'array',
             items: { type: 'string' },
             description: 'Optional additional user prompts to include in the initial conversation.',
+          },
+          model: {
+            type: 'string',
+            description:
+              'Optional model override. Use gemini model names directly or prefix with openai: to select an OpenAI model.',
           },
           max_runs: {
             type: 'integer',

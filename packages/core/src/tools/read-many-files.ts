@@ -14,7 +14,6 @@ import type { ProcessedFileReadResult } from '../utils/fileUtils.js';
 import {
   detectFileType,
   processSingleFileContent,
-  DEFAULT_ENCODING,
   getSpecificMimeType,
 } from '../utils/fileUtils.js';
 import type { PartListUnion } from '@google/genai';
@@ -71,6 +70,13 @@ export interface ReadManyFilesParams {
     respect_git_ignore?: boolean;
     respect_gemini_ignore?: boolean;
   };
+
+  /**
+   * Optional. When true, the tool will avoid emitting user-facing status output.
+   * Used when the caller wants to fetch file content silently for downstream tools.
+   * Defaults to true.
+   */
+  suppress_ui_output?: boolean;
 }
 
 /**
@@ -117,52 +123,9 @@ class ReadManyFilesToolInvocation extends BaseToolInvocation<
 
   getDescription(): string {
     const allPatterns = [...this.params.paths, ...(this.params.include || [])];
-    const pathDesc = `using patterns: 
-${allPatterns.join('`, `')}
- (within target directory: 
-${this.config.getTargetDir()}
-) `;
-
-    // Determine the final list of exclusion patterns exactly as in execute method
-    const paramExcludes = this.params.exclude || [];
-    const paramUseDefaultExcludes = this.params.useDefaultExcludes !== false;
-    const geminiIgnorePatterns = this.config
-      .getFileService()
-      .getGeminiIgnorePatterns();
-    const finalExclusionPatternsForDescription: string[] =
-      paramUseDefaultExcludes
-        ? [
-            ...getDefaultExcludes(this.config),
-            ...paramExcludes,
-            ...geminiIgnorePatterns,
-          ]
-        : [...paramExcludes, ...geminiIgnorePatterns];
-
-    let excludeDesc = `Excluding: ${
-      finalExclusionPatternsForDescription.length > 0
-        ? `patterns like 
-${finalExclusionPatternsForDescription
-  .slice(0, 2)
-  .join(
-    '`, `',
-  )}${finalExclusionPatternsForDescription.length > 2 ? '...`' : '`'}`
-        : 'none specified'
-    }`;
-
-    // Add a note if .geminiignore patterns contributed to the final list of exclusions
-    if (geminiIgnorePatterns.length > 0) {
-      const geminiPatternsInEffect = geminiIgnorePatterns.filter((p) =>
-        finalExclusionPatternsForDescription.includes(p),
-      ).length;
-      if (geminiPatternsInEffect > 0) {
-        excludeDesc += ` (includes ${geminiPatternsInEffect} from .geminiignore)`;
-      }
-    }
-
-    return `Will attempt to read and concatenate files ${pathDesc}. ${excludeDesc}. File encoding: ${DEFAULT_ENCODING}. Separator: "${DEFAULT_OUTPUT_SEPARATOR_FORMAT.replace(
-      '{filePath}',
-      'path/to/file.ext',
-    )}".`;
+    const patternList = allPatterns.slice(0, 3).join(', ');
+    const suffix = allPatterns.length > 3 ? ` +${allPatterns.length - 3} more` : '';
+    return `Reading: ${patternList}${suffix}`;
   }
 
   async execute(signal: AbortSignal): Promise<ToolResult> {
@@ -457,45 +420,52 @@ ${finalExclusionPatternsForDescription
       }
     }
 
-    let displayMessage = `### ReadManyFiles Result (Target Dir: \`${this.config.getTargetDir()}\`)\n\n`;
-    if (processedFilesRelativePaths.length > 0) {
-      displayMessage += `Successfully read and concatenated content from **${processedFilesRelativePaths.length} file(s)**.\n`;
-      if (processedFilesRelativePaths.length <= 10) {
-        displayMessage += `\n**Processed Files:**\n`;
-        processedFilesRelativePaths.forEach(
-          (p) => (displayMessage += `- \`${p}\`\n`),
-        );
-      } else {
-        displayMessage += `\n**Processed Files (first 10 shown):**\n`;
-        processedFilesRelativePaths
-          .slice(0, 10)
-          .forEach((p) => (displayMessage += `- \`${p}\`\n`));
-        displayMessage += `- ...and ${processedFilesRelativePaths.length - 10} more.\n`;
-      }
-    }
+    let displayMessage = '';
 
-    if (skippedFiles.length > 0) {
-      if (processedFilesRelativePaths.length === 0) {
+    // Default to true for suppress_ui_output
+    const suppressOutput = this.params.suppress_ui_output ?? true;
+
+    if (!suppressOutput) {
+      displayMessage = `### ReadManyFiles Result (Target Dir: \`${this.config.getTargetDir()}\`)\n\n`;
+      if (processedFilesRelativePaths.length > 0) {
+        displayMessage += `Successfully read and concatenated content from **${processedFilesRelativePaths.length} file(s)**.\n`;
+        if (processedFilesRelativePaths.length <= 10) {
+          displayMessage += `\n**Processed Files:**\n`;
+          processedFilesRelativePaths.forEach(
+            (p) => (displayMessage += `- \`${p}\`\n`),
+          );
+        } else {
+          displayMessage += `\n**Processed Files (first 10 shown):**\n`;
+          processedFilesRelativePaths
+            .slice(0, 10)
+            .forEach((p) => (displayMessage += `- \`${p}\`\n`));
+          displayMessage += `- ...and ${processedFilesRelativePaths.length - 10} more.\n`;
+        }
+      }
+
+      if (skippedFiles.length > 0) {
+        if (processedFilesRelativePaths.length === 0) {
+          displayMessage += `No files were read and concatenated based on the criteria.\n`;
+        }
+        if (skippedFiles.length <= 5) {
+          displayMessage += `\n**Skipped ${skippedFiles.length} item(s):**\n`;
+        } else {
+          displayMessage += `\n**Skipped ${skippedFiles.length} item(s) (first 5 shown):**\n`;
+        }
+        skippedFiles
+          .slice(0, 5)
+          .forEach(
+            (f) => (displayMessage += `- \`${f.path}\` (Reason: ${f.reason})\n`),
+          );
+        if (skippedFiles.length > 5) {
+          displayMessage += `- ...and ${skippedFiles.length - 5} more.\n`;
+        }
+      } else if (
+        processedFilesRelativePaths.length === 0 &&
+        skippedFiles.length === 0
+      ) {
         displayMessage += `No files were read and concatenated based on the criteria.\n`;
       }
-      if (skippedFiles.length <= 5) {
-        displayMessage += `\n**Skipped ${skippedFiles.length} item(s):**\n`;
-      } else {
-        displayMessage += `\n**Skipped ${skippedFiles.length} item(s) (first 5 shown):**\n`;
-      }
-      skippedFiles
-        .slice(0, 5)
-        .forEach(
-          (f) => (displayMessage += `- \`${f.path}\` (Reason: ${f.reason})\n`),
-        );
-      if (skippedFiles.length > 5) {
-        displayMessage += `- ...and ${skippedFiles.length - 5} more.\n`;
-      }
-    } else if (
-      processedFilesRelativePaths.length === 0 &&
-      skippedFiles.length === 0
-    ) {
-      displayMessage += `No files were read and concatenated based on the criteria.\n`;
     }
 
     if (contentParts.length > 0) {
@@ -586,6 +556,12 @@ export class ReadManyFilesTool extends BaseDeclarativeTool<
             },
           },
         },
+        suppress_ui_output: {
+          type: 'boolean',
+          description:
+            'Optional. When true, skip emitting verbose status output to the UI. Content is still returned for downstream use.',
+          default: true,
+        },
       },
       required: ['paths'],
     };
@@ -601,6 +577,8 @@ This tool is useful when you need to understand or analyze a collection of files
 - Reviewing documentation files (e.g., all Markdown files in the 'docs' directory).
 - Gathering context from multiple configuration files.
 - When the user asks to "read all files in X directory" or "show me the content of all Y files".
+
+IMPORTANT: When using this tool to read files as input for another tool (like proof_helper), ALWAYS set suppress_ui_output: true to avoid verbose output in the UI.
 
 Use this tool when the user's query implies needing the content of several files simultaneously for context, analysis, or summarization. For text files, it uses default UTF-8 encoding and a '--- {filePath} ---' separator between file contents. The tool inserts a '--- End of content ---' after the last file. Ensure paths are relative to the target directory. Glob patterns like 'src/**/*.js' are supported. Avoid using for single files if a more specific single-file reading tool is available, unless the user specifically requests to process a list containing just one file via this tool. Other binary files (not explicitly requested as image/PDF) are generally skipped. Default excludes apply to common non-text files (except for explicitly requested images/PDFs) and large dependency directories unless 'useDefaultExcludes' is false.`,
       Kind.Read,
