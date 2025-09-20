@@ -66,7 +66,7 @@ class DeepResearchPromptConstructorInvocation extends BaseToolInvocation<
   private buildInstructions(payload: StoredPromptPayload): string {
     const sections: string[] = [];
     sections.push(
-      'You are my research analyst. Produce a deeply sourced literature review that speaks in the first person ("I") from my perspective and follows the brief below. Whenever comparisons or multi-factor summaries help, include tables with clear headers. Cite every factual statement with inline references and provide full source metadata.',
+      'You are my research analyst. Produce a deeply sourced literature review that follows the brief below in a clear, professional tone. Whenever comparisons or multi-factor summaries help, include tables with clear headers. Cite every factual statement with inline references and provide full source metadata.',
     );
     sections.push('# Deep Literature Review Brief');
     sections.push(`## Research Objective\n${payload.research_objective.trim()}`);
