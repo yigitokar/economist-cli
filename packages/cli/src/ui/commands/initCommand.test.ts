@@ -9,7 +9,11 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { initCommand } from './initCommand.js';
 import { createMockCommandContext } from '../../test-utils/mockCommandContext.js';
-import { type CommandContext } from './types.js';
+import {
+  type CommandContext,
+  type SlashCommandActionReturn,
+  type SubmitPromptActionReturn,
+} from './types.js';
 
 // Mock the 'fs' module
 vi.mock('fs', () => ({
@@ -58,8 +62,13 @@ describe('initCommand', () => {
     );
 
     // Assert: Triage prompt is submitted
-    expect(result.type).toBe('submit_prompt');
-    expect(result.content).toContain('economist triage and planning agent');
+    expect(result).toBeDefined();
+    const action = result as SlashCommandActionReturn;
+    if (action.type !== 'submit_prompt') {
+      throw new Error(`Expected submit_prompt, got ${action.type}`);
+    }
+    const submit = action as SubmitPromptActionReturn;
+    expect(submit.content).toContain('economist triage and planning agent');
   });
 
   it('should create ECON.md and submit a triage prompt if it does not exist', async () => {
@@ -82,9 +91,14 @@ describe('initCommand', () => {
     );
 
     // Assert: Check that the correct prompt is submitted
-    expect(result.type).toBe('submit_prompt');
-    expect(result.content).toContain('economist triage and planning agent');
-    expect(result.content).toContain('/ECON.md');
+    expect(result).toBeDefined();
+    const action = result as SlashCommandActionReturn;
+    if (action.type !== 'submit_prompt') {
+      throw new Error(`Expected submit_prompt, got ${action.type}`);
+    }
+    const submit = action as SubmitPromptActionReturn;
+    expect(submit.content).toContain('economist triage and planning agent');
+    expect(submit.content).toContain('/ECON.md');
   });
 
   it('should return an error if config is not available', async () => {

@@ -127,6 +127,10 @@ When the user requests broad literature review, multi-source synthesis, or deep 
   - Execute a deep-research request and save artifacts under \`research/runs/\` and \`research/results/\`
 - Provider/model policy (no user selection in-chat): OpenAI only, default model \`o4-mini-deep-research-2025-06-26\`. Users can change via \`/set DEEP_RESEARCH_MODEL o3\` (sets \`DEEP_RESEARCH_MODEL=openai:o3-deep-research-2025-06-26\`).
 - Prefer \`/deep\` over ad-hoc browsing tools for comprehensive research tasks. Use \`web_fetch\` only for targeted prompts that reference specific URLs provided by the user.
+- Before invoking the \`deep_literature_review\` tool, you **must** call \`deep_research_triage\`. Pass a short \`query_hint\` summarizing the user's request, deliver the interview questions, collect answers, and synthesize them into structured notes.
+- Once answers are gathered, immediately summarize them back to the user and invoke \`deep_research_prompt_constructor\` with:
+  \`research_objective\`, optional sharper \`query\`, \`coverage_requirements\`, \`evidence_expectations\`, \`source_preferences\` ({prioritize, avoid, notes}), \`deliverables\`, \`timeline\`, and \`additional_context\` (plus metadata if needed). This persists the triage under \`.econ/deep-lit-triage/\` and returns a reusable instruction template.
+- If triage/prompt construction happened earlier, load the saved summary (e.g., \`.econ/deep-lit-triage/latest.json\` via \`read_file\`) and confirm with the user that it still applies before reusing it for \`deep_literature_review\`.
 
 ## Economic Research Tasks
 

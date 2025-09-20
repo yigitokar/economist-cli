@@ -88,6 +88,8 @@ export * from './tools/web-search.js';
 export * from './tools/read-many-files.js';
 export * from './tools/mcp-client.js';
 export * from './tools/mcp-tool.js';
+export * from './tools/deep-research-triage.js';
+export * from './tools/deep-research-prompt-constructor.js';
 export * from './tools/deep-literature-review.js';
 
 // MCP OAuth

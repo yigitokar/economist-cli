@@ -870,7 +870,21 @@ export class Config {
     registerCoreTool(MemoryTool);
     registerCoreTool(WebSearchTool, this);
     registerCoreTool(ProofHelperTool, this);
-    // Deep Research (OpenAI Responses background) tool
+    // Deep research helpers
+    try {
+      const { DeepResearchTriageTool } = await import('../tools/deep-research-triage.js');
+      registerCoreTool(DeepResearchTriageTool);
+    } catch {
+      // Non-fatal if triage tool import fails
+    }
+
+    try {
+      const { DeepResearchPromptConstructorTool } = await import('../tools/deep-research-prompt-constructor.js');
+      registerCoreTool(DeepResearchPromptConstructorTool, this);
+    } catch {
+      // Non-fatal if prompt constructor import fails
+    }
+
     try {
       const { DeepLiteratureReviewTool } = await import('../tools/deep-literature-review.js');
       registerCoreTool(DeepLiteratureReviewTool, this);
