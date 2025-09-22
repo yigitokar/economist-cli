@@ -51,6 +51,7 @@ import { handleAutoUpdate } from './utils/handleAutoUpdate.js';
 import { appEvents, AppEvent } from './utils/events.js';
 import { SettingsContext } from './ui/contexts/SettingsContext.js';
 import { writeFileSync } from 'node:fs';
+import { ensureProOnboarding } from './services/proOnboarding.js';
 
 export function validateDnsResolutionOrder(
   order: string | undefined,
@@ -221,6 +222,9 @@ export async function main() {
       `${errorMessages.join('\n')}\nPlease fix the configuration file(s) and try again.`,
     );
   }
+
+  // Enforce Pro onboarding (device-link with Supabase + Stripe) before CLI starts
+  await ensureProOnboarding();
 
   const argv = await parseArguments(settings.merged);
   const extensions = loadExtensions(workspaceRoot);
