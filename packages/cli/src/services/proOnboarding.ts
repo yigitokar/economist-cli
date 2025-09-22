@@ -113,7 +113,7 @@ export async function ensureProOnboarding(): Promise<void> {
     verification_url = resp.verification_url;
     if (!code || !verification_url) throw new Error('Invalid response from issue-link-code');
   } catch (e: any) {
-    console.error('\nEconomist CLI requires a paid subscription to continue.');
+    console.error('\nEconomist CLI needs to link your account to continue.');
     console.error('Could not start device-link flow:', e?.message ?? e);
     console.error('Please ensure your Supabase Edge Functions have required env set (SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, APP_BASE_URL).');
     process.exit(1);
@@ -139,7 +139,7 @@ export async function ensureProOnboarding(): Promise<void> {
   const maxSeconds = 10 * 60; // 10 minutes
   const intervalMs = 2000;
   const start = Date.now();
-  process.stdout.write('Waiting for signup and payment to complete');
+  process.stdout.write('Waiting for account linking to complete');
   while (true) {
     const elapsed = (Date.now() - start) / 1000;
     if (elapsed > maxSeconds) {

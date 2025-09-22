@@ -36,6 +36,9 @@ import { setupGithubCommand } from '../ui/commands/setupGithubCommand.js';
 import { terminalSetupCommand } from '../ui/commands/terminalSetupCommand.js';
 import { setProofModelCommand } from '../ui/commands/setProofModelCommand.js';
 import { deepResearchCommand } from '../ui/commands/deepResearchCommand.js';
+import { signOutCommand } from '../ui/commands/signOutCommand.js';
+import { loginCommand } from '../ui/commands/loginCommand.js';
+import { whoamiCommand } from '../ui/commands/whoamiCommand.js';
 
 /**
  * Loads the core, hard-coded slash commands that are an integral part
@@ -82,6 +85,9 @@ export class BuiltinCommandLoader implements ICommandLoader {
       terminalSetupCommand,
       setProofModelCommand,
       deepResearchCommand,
+      signOutCommand,
+      loginCommand,
+      whoamiCommand,
     ];
 
     return allDefinitions.filter((cmd): cmd is SlashCommand => cmd !== null);

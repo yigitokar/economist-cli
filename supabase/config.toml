@@ -1,7 +1,0 @@
-# Supabase CLI configuration for Economist CLI
-# Docs: https://supabase.com/docs/guides/cli/config
-
-[project]
-ref = "giefigqpffbszyozgzkk"
-
-# Optional local studio config can be added here if needed

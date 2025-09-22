@@ -44,3 +44,15 @@ packages/vscode-ide-companion/*.vsix
 
 # GHA credentials
 gha-creds-*.json
+
+# Next.js build output
+packages/web/.next/
+
+# Package-level env files
+packages/**/.env
+packages/**/.env.local
+packages/**/.env.*.local
+
+# Supabase temp/backup
+supabase/.temp/
+supabase/config.backup.toml

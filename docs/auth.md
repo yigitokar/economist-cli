@@ -14,10 +14,10 @@ This document captures the decisions and implementation details for moving Econo
 
 ## High‑level architecture
 
-- **Supabase** is the control plane (Auth, DB, RLS, RPCs, Edge Functions, Stripe webhooks).
-- **Stripe** handles payment and subscription lifecycle.
-- **Device‑link flow** connects a headless CLI session with a user’s browser session and Stripe checkout.
-- **CLI token** is minted after successful signup + payment and stored locally (keychain planned), used for Pro API calls.
+- **Supabase** is the control plane (Auth, DB, RLS, RPCs, Edge Functions).
+- **Stripe (optional)** handles payment and subscription lifecycle when enabled.
+- **Device‑link flow** connects a headless CLI session with a user’s browser session. In FREE_MODE, we skip Stripe and mint a token after login.
+- **CLI token** is minted after successful signup and stored locally (keychain planned), used for Pro API calls.
 
 ```mermaid
 sequenceDiagram
@@ -25,22 +25,18 @@ sequenceDiagram
   participant Edge(issue-link)
   participant Web(App)
   participant Supabase(Auth/DB)
-  participant Stripe
 
   CLI->>Edge(issue-link): POST /issue-link-code
   Edge(issue-link)-->>CLI: { code, verification_url }
   CLI->>Web(App): open verification_url (contains code)
   Web(App)->>Supabase(Auth/DB): Google OAuth Login
-  Web(App)->>Edge(create-checkout): POST price_id, code (user JWT)
-  Edge(create-checkout)->>Stripe: create Checkout session
-  Stripe-->>Web(App): redirect to hosted Checkout
-  Stripe-->>Edge(webhook): checkout.session.completed/subscription.*
-  Edge(webhook)->>Supabase(DB): upsert customers/subscriptions
   Web(App)->>Edge(finalize-link): POST { code } (user JWT)
   Edge(finalize-link)->>Supabase(DB): mint CLI token, mark code linked
   CLI->>Edge(poll-status): poll until status=linked
   CLI->>Edge(consume-link): POST { code } → { token }
   CLI->>CLI: save token → proceed
+
+  Note over Web(App),Edge(finalize-link): FREE_MODE=true (dev/test): skip Stripe entirely
 ```
 
 ## Supabase project
@@ -48,6 +44,14 @@ sequenceDiagram
 - Project: `econ_cli`
 - Project ID: `giefigqpffbszyozgzkk`
 - URL: `https://giefigqpffbszyozgzkk.supabase.co`
+
+## Current dev status (FREE_MODE)
+
+- FREE_MODE is enabled for development/testing: `supabase secrets set FREE_MODE="true"`.
+- The onboarding web app calls `finalize-link` directly after Google login (Stripe is skipped).
+- The `finalize-link` Edge Function was redeployed with FREE_MODE support.
+- CLI token linking is fully functional end-to-end without payment.
+- To re-enable Stripe later, set `FREE_MODE=false` and restore the original `/sign-up` flow (see Stripe section below).
 
 ### Extensions
 
@@ -79,18 +83,11 @@ Public (pre‑auth) — should NOT require JWT verification:
 
 Authenticated (require user JWT):
 
-- `create-checkout-session`
-  - Takes `price_id` (defaults to `STRIPE_PRICE_PRO_MONTHLY`) and `code`.
-  - Creates Stripe Checkout; success redirects to `/success?session_id=...&code=...`.
-- `confirm-checkout`
-  - Given `session_id` and `code`, upserts `customers` and `subscriptions` from Stripe API.
-- `create-billing-portal`
-  - Returns Stripe Billing Portal session URL.
 - `finalize-link`
-  - Validates user entitlements via `get_entitlements`.
   - Mints a `cli_tokens` token (hash stored) and updates `device_links` with a one‑time token.
-- `stripe-webhook`
-  - Handles `checkout.session.completed` and `customer.subscription.*` to keep subscriptions in sync.
+  - In FREE_MODE, skips entitlement checks; in paid mode, validates via `get_entitlements`.
+- Stripe-related (only when Stripe is enabled):
+  - `create-checkout-session`, `confirm-checkout`, `create-billing-portal`, `stripe-webhook`
 
 > Note: Public functions do not require a user session. They can remain with `verify_jwt` enabled and accept the project's ANON JWT (`Authorization: Bearer <SUPABASE_ANON_KEY>`). Authenticated functions require a Supabase user JWT and are invoked from the onboarding web app.
 
@@ -99,20 +96,20 @@ Authenticated (require user JWT):
 - `SUPABASE_URL` — your project URL
 - `SUPABASE_ANON_KEY` — anon key (used by web app + CLI for public functions)
 - `SUPABASE_SERVICE_ROLE_KEY` — service role (Edge Functions only)
-- `APP_BASE_URL` — e.g., `https://econ_agent.com`
-- `STRIPE_SECRET_KEY` — Stripe secret
-- `STRIPE_WEBHOOK_SECRET` — Stripe webhook signing secret
-- `STRIPE_PRICE_PRO_MONTHLY` — Stripe price ID for $20/mo plan
+- `APP_BASE_URL` — e.g., `https://econ_agent.com` or `http://localhost:3000`
+- `FREE_MODE` — set to `true` to skip Stripe (dev/test)
+- Stripe variables (only when Stripe is enabled):
+  - `STRIPE_SECRET_KEY`
+  - `STRIPE_WEBHOOK_SECRET`
+  - `STRIPE_PRICE_PRO_MONTHLY`
 
-## Stripe configuration
+## Stripe configuration (optional)
 
-- Product: “Economist Pro”
-- Price: $20/month (use the resulting `price_xxx` as `STRIPE_PRICE_PRO_MONTHLY`)
-- Webhook events to enable:
-  - `checkout.session.completed`
-  - `customer.subscription.created`
-  - `customer.subscription.updated`
-  - `customer.subscription.deleted`
+When `FREE_MODE=true`, Stripe is disabled and not required for onboarding. To enable Stripe later:
+
+- Create Product “Economist Pro” and a $20/month Price → set `STRIPE_PRICE_PRO_MONTHLY`.
+- Add webhook to `stripe-webhook` with events: checkout.session.completed, customer.subscription.created/updated/deleted.
+- Set `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` in Supabase secrets.
 
 ## CLI integration
 
@@ -129,6 +126,34 @@ Authenticated (require user JWT):
 - `SUPABASE_ANON_KEY=...` (Project Settings → API)
 
 > The CLI only calls public (pre‑auth) functions during onboarding. After linking, it will call Pro functions using the minted CLI token.
+> In FREE_MODE, the web app calls `finalize-link` directly after login (no Stripe).
+
+### CLI auth commands
+
+- `/login` (aliases: `/link`, `/sign-in`)
+  - Starts the device-link flow from the terminal: issues a code, opens the sign-up URL, polls status, consumes token, and saves it locally.
+- `/whoami` (alias: `/status`)
+  - Shows whether you are linked via environment variable (`ECONOMIST_CLI_TOKEN`) or via the saved session file.
+- `/sign-out` (aliases: `/logout`, `/signout`)
+  - Removes the local session file to sign out. If `ECONOMIST_CLI_TOKEN` is set, you’ll be reminded to unset it.
+
+Token persistence
+- Saved file: `~/.economist/session.json` (hashed token stored server-side; local file stores the one-time token for reuse).
+- ENV override: `ECONOMIST_CLI_TOKEN` takes precedence over the saved file.
+
+### CLI local .env (auto-loaded)
+
+- The CLI runner (`scripts/start.js`) auto-loads environment variables from `economist-cli/.env`.
+- Required entries:
+  - `SUPABASE_URL=https://giefigqpffbszyozgzkk.supabase.co`
+  - `SUPABASE_ANON_KEY=<your anon key>`
+- These are separate from `packages/web/.env.local` (which uses `NEXT_PUBLIC_...`).
+
+### APP_BASE_URL and ports
+
+- `APP_BASE_URL` must match your running Next.js dev server:
+  - `http://localhost:3000` (recommended) or `http://localhost:3001` if 3000 is busy.
+- Update with: `supabase secrets set APP_BASE_URL="http://localhost:3000"`.
 
 ## Secrets management
 
@@ -149,20 +174,18 @@ Authenticated (require user JWT):
 - **No secrets in repo**: Keys must be configured only as environment variables in Supabase/Stripe.
 - **Rate limiting**: consider basic rate limiting for `issue-link-code` and `poll-link-status` to prevent abuse.
 
-## Onboarding web app (to build)
+## Onboarding web app
 
 - Framework: Next.js (or similar) with `@supabase/supabase-js`.
 - Pages:
-  - `/sign-up?code=XXXX`: Google OAuth → call `create-checkout-session(code)` and redirect to Stripe Checkout.
-  - `/success?session_id=...&code=...`: call `confirm-checkout`, then `finalize-link(code)`.
-  - `/portal`: call `create-billing-portal` and redirect.
+  - `/sign-up?code=XXXX`: Google OAuth → call `finalize-link(code)` directly (FREE_MODE).
+  - When Stripe is enabled, `/sign-up` will call `create-checkout-session` and `/success` will call `confirm-checkout` then `finalize-link`.
+  - `/portal` (billing) only when Stripe is enabled.
 
 ## Testing checklist
 
-- Stripe (test mode): create product/price, set webhook pointing to `stripe-webhook` function URL.
-- Run Stripe CLI to forward events to your Edge function in dev.
-- Validate device‑link happy path and timeouts.
-- Confirm subscription sync after webhook arrival and via `confirm-checkout` fallback.
+- Validate device‑link happy path and timeouts (FREE_MODE).
+- Optional: enable Stripe later and test checkout, webhook delivery, and subscription sync.
 
 ## Future work
 

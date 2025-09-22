@@ -38,6 +38,7 @@ Deno.serve(async (req: Request) => {
 
   const userClient = createClient(supabaseUrl, anonKey, { global: { headers: { Authorization: authHeader } }, auth: { persistSession: false } });
   const adminClient = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } });
+  const freeMode = Deno.env.get("FREE_MODE") === "true";
 
   try {
     const { data: userRes, error: userErr } = await userClient.auth.getUser();
@@ -57,11 +58,13 @@ Deno.serve(async (req: Request) => {
     if (!link) return json({ error: "Invalid code" }, 404);
     if (new Date(link.expires_at).getTime() < Date.now()) return json({ error: "Code expired" }, 400);
 
-    // Check entitlements for the authenticated user
-    const { data: ent, error: entErr } = await userClient.rpc("get_entitlements");
-    if (entErr) throw entErr;
-    if (!ent?.[0]?.is_pro) {
-      return json({ error: "Subscription required" }, 402);
+    // Check entitlements unless running in FREE_MODE (test/dev)
+    if (!freeMode) {
+      const { data: ent, error: entErr } = await userClient.rpc("get_entitlements");
+      if (entErr) throw entErr;
+      if (!ent?.[0]?.is_pro) {
+        return json({ error: "Subscription required" }, 402);
+      }
     }
 
     // Mint CLI token

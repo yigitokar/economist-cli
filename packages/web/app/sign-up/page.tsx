@@ -20,29 +20,40 @@ export default function SignUpPage() {
     | "need_code"
     | "checking_session"
     | "login_required"
-    | "creating_checkout"
-    | "redirecting"
+    | "login_redirect"
+    | "finalizing"
+    | "done"
     | "error"
   >("idle");
   const [error, setError] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     const run = async () => {
+      setStatus("checking_session");
+      const { data } = await supabase.auth.getUser();
+      if (!data.user) {
+        setStatus("login_redirect");
+        // Automatically start Google OAuth and return; user will land back here after login
+        await supabase.auth.signInWithOAuth({
+          provider: "google",
+          options: { redirectTo: typeof window !== "undefined" ? window.location.href : undefined },
+        });
+        return;
+      }
       if (!code) {
         setStatus("need_code");
         return;
       }
-      setStatus("checking_session");
-      const { data } = await supabase.auth.getUser();
-      if (!data.user) {
-        setStatus("login_required");
-        return;
-      }
       try {
-        setStatus("creating_checkout");
-        const resp = await postWithAuth<{ url: string }>("create-checkout-session", { code });
-        setStatus("redirecting");
-        window.location.assign(resp.url);
+        // FREE MODE: directly finalize link without Stripe checkout
+        setStatus("finalizing");
+        await postWithAuth("finalize-link", { code });
+        setStatus("done");
       } catch (e: any) {
         setError(e?.message ?? String(e));
         setStatus("error");
@@ -53,7 +64,6 @@ export default function SignUpPage() {
   }, [code]);
 
   const handleGoogle = async () => {
-    if (!code) return;
     // After Google OAuth, Supabase will restore the session and reload this page
     await supabase.auth.signInWithOAuth({
       provider: "google",
@@ -65,17 +75,25 @@ export default function SignUpPage() {
     <div>
       <h1>Sign up for Economist CLI Pro</h1>
       {status === "need_code" && (
-        <p>Missing device code. Please start from the CLI to generate a sign-up link.</p>
+        <p>
+          You are signed in, but the device code is missing. Please start from the
+          CLI to generate a sign-up link, or paste the link here when available.
+        </p>
       )}
       {status === "checking_session" && <p>Checking session…</p>}
+      {status === "login_redirect" && <p>Redirecting to Google sign-in…</p>}
       {status === "login_required" && (
         <div>
           <p>Sign in with Google to continue.</p>
           <button onClick={handleGoogle} style={{ padding: 8 }}>Sign in with Google</button>
         </div>
       )}
-      {status === "creating_checkout" && <p>Creating checkout session…</p>}
-      {status === "redirecting" && <p>Redirecting to Stripe Checkout…</p>}
+      {status === "finalizing" && <p>Finalizing device link…</p>}
+      {status === "done" && (
+        <>
+          <p>All set! You can return to the terminal.</p>
+        </>
+      )}
       {status === "error" && (
         <div>
           <p style={{ color: "crimson" }}>Error: {error}</p>
@@ -83,7 +101,9 @@ export default function SignUpPage() {
         </div>
       )}
       <hr />
-      <p style={{ fontSize: 12, opacity: 0.7 }}>Device code: {code ?? "(none)"}</p>
+      <p style={{ fontSize: 12, opacity: 0.7 }} suppressHydrationWarning>
+        Device code: {mounted ? (code ?? "(none)") : ""}
+      </p>
     </div>
   );
 }
