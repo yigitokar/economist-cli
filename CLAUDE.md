@@ -4,9 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is the **Economist CLI**, a fork of the Gemini CLI tailored for economists. It's an open-source AI agent that brings the power of Gemini directly into your terminal.
+This is the **Economist CLI**, a fork of the Gemini CLI tailored for economic research workflows. It's an open-source AI agent that brings the power of Gemini and OpenAI directly into your terminal, with specialized tools for economists.
 
 **Main branch:** `main`
+**Binary name:** `economist` (not `gemini`)
+**Package name:** `@careresearch/econ-cli`
 
 ## Essential Commands
 
@@ -40,11 +42,11 @@ npm run lint:ci     # CI-level lint check (fails on warnings)
 npm run format      # Format all code with Prettier
 
 # Start the CLI locally
-npm run start       # Start from root
-npm run build-and-start  # Build then start
+npm run start       # Start economist CLI from root
+npm run build-and-start  # Build then start economist CLI
 
 # Debug mode
-npm run debug       # Start with Node inspector
+npm run debug       # Start economist CLI with Node inspector
 ```
 
 ### Package-Specific Commands
@@ -52,7 +54,7 @@ npm run debug       # Start with Node inspector
 The project uses npm workspaces. To run commands in specific packages:
 
 ```bash
-# Run command in specific package
+# Run command in specific package (note: internal packages still use @google namespace)
 npm run <command> --workspace @google/gemini-cli
 npm run <command> --workspace @google/gemini-cli-core
 npm run <command> --workspace @google/gemini-cli-a2a-server
@@ -90,9 +92,9 @@ packages/
    - Dynamic tool discovery via MCP (Model Context Protocol)
    - Tool registry in `packages/core/src/tools/`
 
-4. **AI Integration (GeminiClient)**
-   - Multiple auth methods: OAuth, API keys, Vertex AI
-   - Conversation history management with context compression
+4. **AI Integration (Multi-Provider)**
+   - **Gemini**: Multiple auth methods (OAuth, API keys, Vertex AI), conversation history management
+   - **OpenAI**: Integrated for specialized features like Deep Research and Proof Helper
    - Flash model fallback for quota management
    - Located in `packages/core/src/services/gemini-client.ts`
 
@@ -171,6 +173,16 @@ const myMock = vi.hoisted(() => vi.fn());
 - Write **minimal, high-value comments** only when necessary
 - Follow existing patterns in neighboring files
 - Check existing dependencies before adding new ones
+
+## Economist-Specific Features
+
+The Economist CLI includes specialized features for economic research:
+
+- **Economics-native toolkit**: Optimized prompts, data helpers, and workflow presets
+- **Proof Helper**: Formal reasoning assistant for economic arguments and proofs
+- **Deep Research**: Long-form investigation mode using OpenAI models
+- **Research context**: Support for `ECON.md` or `.economist/context.md` files for project context
+- **Data workflow integration**: Built-in support for economic modeling and policy analysis
 
 ## Important Context from GEMINI.md
 
