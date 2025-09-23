@@ -40,9 +40,10 @@ npm install && npm run build
 ```
 
 ## Initial Setup
-1. **Launch the CLI:** Run `economist` and follow the prompt to sign in with your Google account for Gemini access, or supply an API key via environment variables.
-2. **Enable OpenAI-powered tools (optional):** Set `OPENAI_API_KEY` in your shell or a `.env` file to unlock Deep Research and Proof Helper features that rely on OpenAI models.
-3. **Project context (optional):** Drop an `ECON.md` or `.economist/context.md` file in your repo to preload research goals, datasets, or style guidance.
+1. **Launch the CLI (device-link):** Run `economist`. The CLI will display a short code and open your browser to `/sign-up`. Sign in with Google (via Supabase Auth). In production, you’ll be routed through Stripe Checkout. When onboarding completes, the web app calls finalize‑link to mint a CLI token and the CLI signs you in automatically.
+2. **Dev/test FREE_MODE (optional):** In development, Stripe is skipped and `/sign-up` calls finalize‑link directly. You can manage auth from within the CLI: `/login` to re‑run device‑link, `/whoami` to check status, and `/sign‑out` to clear the local token.
+3. **Enable OpenAI-powered tools (optional):** Set `OPENAI_API_KEY` in your shell or a `.env` file to unlock Deep Research and Proof Helper features that rely on OpenAI models.
+4. **Project context (optional):** Drop an `ECON.md` or `.economist/context.md` file in your repo to preload research goals, datasets, or style guidance.
 
 Example `.env` snippet:
 
