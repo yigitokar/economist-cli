@@ -29,7 +29,7 @@
     "sandboxImageUri": "us-docker.pkg.dev/gemini-code-dev/gemini-cli/sandbox:0.2.2"
   },
   "dependencies": {
-    "@careresearch/econ-core": "file:../core",
+    "@careresearch/econ-core": "^0.2.2",
     "@google/genai": "1.13.0",
     "@iarna/toml": "^2.2.5",
     "@modelcontextprotocol/sdk": "^1.15.1",
