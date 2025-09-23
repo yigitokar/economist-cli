@@ -12,7 +12,7 @@ import open from 'open';
 
 const TOKEN_ENV = 'ECONOMIST_CLI_TOKEN';
 const SUPABASE_URL_ENV = 'SUPABASE_URL';
-const SUPABASE_ANON_KEY_ENV = 'SUPABASE_ANON_KEY';
+const DEFAULT_SUPABASE_URL = 'https://giefigqpffbszyozgzkk.supabase.co';
 
 const CONFIG_DIR = path.join(os.homedir(), '.economist');
 const SESSION_FILE = path.join(CONFIG_DIR, 'session.json');
@@ -51,10 +51,9 @@ async function saveToken(token: string): Promise<void> {
   await fs.writeFile(SESSION_FILE, payload, { mode: 0o600 });
 }
 
-function requireEnv(name: string): string {
+function getEnvOrDefault(name: string, fallback?: string): string {
   const v = process.env[name]?.trim();
-  if (!v) throw new Error(`Missing required environment variable: ${name}`);
-  return v;
+  return v || (fallback ?? '');
 }
 
 async function postJSON(url: string, body: unknown, headers: Record<string, string>) {
@@ -98,10 +97,9 @@ export async function ensureProOnboarding(): Promise<void> {
   const existing = await getSavedToken();
   if (existing) return;
 
-  const supabaseUrl = requireEnv(SUPABASE_URL_ENV);
-  const anonKey = requireEnv(SUPABASE_ANON_KEY_ENV);
+  const supabaseUrl = getEnvOrDefault(SUPABASE_URL_ENV, DEFAULT_SUPABASE_URL);
   const base = supabaseUrl.replace(/\/$/, '');
-  const headers = { Authorization: `Bearer ${anonKey}` };
+  const headers: Record<string, string> = {};
 
   // Step 1: Issue link code
   const issueUrl = `${base}/functions/v1/issue-link-code`;

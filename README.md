@@ -39,18 +39,23 @@ cd economist-cli
 npm install && npm run build
 ```
 
+### Zero-config by default
+- No local `.env` is required for npm installs. The CLI uses built-in defaults and calls provider APIs via Supabase Edge Function proxies.
+- When you run `economist`, the CLI links your device, mints a token, and authenticates to the proxies using `X-CLI-Token`.
+- Your provider keys (OpenAI / Gemini) live server-side in Supabase and never on the client.
+
 ## Initial Setup
 1. **Launch the CLI (device-link):** Run `economist`. The CLI will display a short code and open your browser to `/sign-up`. Sign in with Google (via Supabase Auth). In production, you’ll be routed through Stripe Checkout. When onboarding completes, the web app calls finalize‑link to mint a CLI token and the CLI signs you in automatically.
 2. **Dev/test FREE_MODE (optional):** In development, Stripe is skipped and `/sign-up` calls finalize‑link directly. You can manage auth from within the CLI: `/login` to re‑run device‑link, `/whoami` to check status, and `/sign‑out` to clear the local token.
-3. **Enable OpenAI-powered tools (optional):** Set `OPENAI_API_KEY` in your shell or a `.env` file to unlock Deep Research and Proof Helper features that rely on OpenAI models.
+3. **Optional BYOK:** If you prefer to use your own provider keys locally, set `OPENAI_API_KEY` (for Deep Research) and/or `GEMINI_API_KEY` (for direct Gemini usage). Otherwise, the CLI will use the Supabase proxies with server‑side keys.
 4. **Project context (optional):** Drop an `ECON.md` or `.economist/context.md` file in your repo to preload research goals, datasets, or style guidance.
 
-Example `.env` snippet:
+Optional BYOK `.env` snippet:
 
 ```dotenv
-GEMINI_API_KEY=your-gemini-key
-OPENAI_API_KEY=your-openai-key
-GOOGLE_API_KEY=your-grounding-key
+GEMINI_API_KEY=your-gemini-key   # Optional; if omitted, Gemini calls use the Supabase proxy
+OPENAI_API_KEY=your-openai-key   # Optional; if omitted, Deep Research uses the Supabase proxy
+GOOGLE_API_KEY=your-grounding-key # Optional for Vertex/grounding use cases
 ```
 
 ## Quick Start

@@ -89,7 +89,7 @@ Authenticated (require user JWT):
 - Stripe-related (only when Stripe is enabled):
   - `create-checkout-session`, `confirm-checkout`, `create-billing-portal`, `stripe-webhook`
 
-> Note: Public functions do not require a user session. They can remain with `verify_jwt` enabled and accept the project's ANON JWT (`Authorization: Bearer <SUPABASE_ANON_KEY>`). Authenticated functions require a Supabase user JWT and are invoked from the onboarding web app.
+> Note: In this project, public onboarding functions do not require a user session and are configured with `verify_jwt: false`; no Authorization header is required from the CLI. Authenticated functions require a Supabase user JWT and are invoked from the onboarding web app.
 
 ### Required environment variables (Edge Functions)
 
@@ -120,13 +120,15 @@ When `FREE_MODE=true`, Stripe is disabled and not required for onboarding. To en
   - Token storage (temporary): `~/.economist/session.json`.
   - Next step: migrate to OS keychain (`keytar`) for secure storage.
 
-### CLI environment variables (for local dev)
+### CLI environment variables and .env (optional)
 
-- `SUPABASE_URL=https://giefigqpffbszyozgzkk.supabase.co`
-- `SUPABASE_ANON_KEY=...` (Project Settings → API)
+- Zero‑config by default: for npm installs, no local `.env` is required. The CLI links your device, then calls provider APIs via Supabase Edge Function proxies using `X-CLI-Token`.
+- Optional overrides for local dev:
+  - `SUPABASE_URL=https://giefigqpffbszyozgzkk.supabase.co` (defaults to this project URL if omitted)
+  - `OPENAI_API_KEY=...` (BYOK for Deep Research; if omitted the CLI uses `openai-proxy`)
+  - `GEMINI_API_KEY=...` (BYOK for direct Gemini; if omitted the CLI uses `genai-proxy`)
 
-> The CLI only calls public (pre‑auth) functions during onboarding. After linking, it will call Pro functions using the minted CLI token.
-> In FREE_MODE, the web app calls `finalize-link` directly after login (no Stripe).
+> The CLI calls only public (pre‑auth) functions during onboarding. After linking, it calls Pro functions using the minted CLI token (sent as `X-CLI-Token`). In FREE_MODE, the web app calls `finalize-link` directly after login (no Stripe).
 
 ### CLI auth commands
 

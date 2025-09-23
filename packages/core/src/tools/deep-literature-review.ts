@@ -100,13 +100,10 @@ class DeepLiteratureReviewInvocation extends BaseToolInvocation<
     throw new Error('Missing CLI token. Please run the device-link flow again with /login.');
   }
 
-  private getSupabaseEnv(): { url: string; anon: string } {
-    const supabaseUrl = process.env['SUPABASE_URL']?.trim();
-    const anon = process.env['SUPABASE_ANON_KEY']?.trim();
-    if (!supabaseUrl || !anon) {
-      throw new Error('Missing SUPABASE_URL or SUPABASE_ANON_KEY environment variables.');
-    }
-    return { url: supabaseUrl.replace(/\/$/, ''), anon };
+  private getSupabaseEnv(): { url: string } {
+    const DEFAULT_SUPABASE_URL = 'https://giefigqpffbszyozgzkk.supabase.co';
+    const supabaseUrl = (process.env['SUPABASE_URL'] || DEFAULT_SUPABASE_URL).trim();
+    return { url: supabaseUrl.replace(/\/$/, '') };
   }
 
   private async proxyRequest<T>(
@@ -115,13 +112,12 @@ class DeepLiteratureReviewInvocation extends BaseToolInvocation<
     body?: unknown,
     stream?: boolean,
   ): Promise<T> {
-    const { url, anon } = this.getSupabaseEnv();
+    const { url } = this.getSupabaseEnv();
     const token = await this.getCliToken();
     const resp = await fetch(`${url}/functions/v1/openai-proxy`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${anon}`,
         'X-CLI-Token': token,
       },
       body: JSON.stringify({ path: pathStr, method, body, stream: !!stream }),
