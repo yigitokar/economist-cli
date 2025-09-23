@@ -36,7 +36,11 @@ Deno.serve(async (req: Request) => {
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  const googleApiKey = Deno.env.get("GOOGLE_API_KEY") || Deno.env.get("GEMINI_API_KEY");
+  const googleApiKey =
+    Deno.env.get("GOOGLE_API_KEY") ||
+    Deno.env.get("GEMINI_API_KEY") ||
+    Deno.env.get("google_api_key") ||
+    Deno.env.get("gemini_api_key");
   const freeMode = Deno.env.get("FREE_MODE") === "true";
 
   if (!supabaseUrl || !serviceKey) return json({ error: "Missing env SUPABASE_URL/SUPABASE_SERVICE_ROLE_KEY" }, 500);
