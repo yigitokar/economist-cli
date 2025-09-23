@@ -367,11 +367,11 @@ export default function HomePage() {
       <section id="install" className="relative z-10 px-4 sm:px-6 lg:px-12 py-20 bg-white/5 backdrop-blur-sm scroll-mt-24">
         <div className="max-w-4xl mx-auto">
           <h2 className="text-white text-3xl lg:text-5xl font-bold text-center mb-16">Install and Quick Start</h2>
-          <p className="text-white/60 text-center -mt-12 mb-10">Requires Node.js 18+.</p>
+          <p className="text-white/60 text-center -mt-12 mb-10">Requires Node.js 20+.</p>
           <div className="space-y-6">
             {[
-              { id: 'try-now', title: 'Try immediately', command: 'npx @careresearch/econ-cli' },
-              { id: 'install-global', title: 'Install globally', command: 'npm install -g @careresearch/econ-cli' },
+              { id: 'try-now', title: 'Try immediately', command: 'npx @careresearch/econ-agent' },
+              { id: 'install-global', title: 'Install globally', command: 'npm install -g @careresearch/econ-agent' },
               { id: 'local-clone', title: 'Local clone', command: `git clone https://github.com/yigitokar/economist-cli\ncd economist-cli\nnpm install && npm run build` },
               { id: 'quickstart', title: 'Quick Start', command: `# Open an interactive workspace in the current project\neconomist\n\n# Include extra folders when building context\neconomist --include-directories ../data --include-directories ../models\n\n# Run a one-off prompt without entering the UI\neconomist --prompt "Design a DSGE calibration workflow for the attached data"\n\n# Manage installed MCP servers\neconomist mcp list` },
             ].map((demo) => (

@@ -22,16 +22,16 @@ Economist CLI is a command-line agent that pairs top-tier coding ability with to
 - Coordinate long-running projects with saved sessions and reproducible notebooks.
 
 ## Install
-**Requirements:** Node.js 18+ on macOS, Linux, or Windows.
+**Requirements:** Node.js 20+ on macOS, Linux, or Windows.
 
 Choose the flow that fits your setup:
 
 ```bash
 # Try immediately
-npx @careresearch/econ-cli
+npx @careresearch/econ-agent
 
 # Install globally
-npm install -g @careresearch/econ-cli
+npm install -g @careresearch/econ-agent
 
 # Local clone (contribute or customize)
 git clone https://github.com/yigitokar/economist-cli
