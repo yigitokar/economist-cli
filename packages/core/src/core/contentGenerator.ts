@@ -19,6 +19,7 @@ import type { Config } from '../config/config.js';
 
 import type { UserTierId } from '../code_assist/types.js';
 import { LoggingContentGenerator } from './loggingContentGenerator.js';
+import { ProxyContentGenerator } from './proxyContentGenerator.js';
 import { InstallationManager } from '../utils/installationManager.js';
 
 /**
@@ -83,20 +84,19 @@ export function createContentGeneratorConfig(
     return contentGeneratorConfig;
   }
 
-  if (authType === AuthType.USE_GEMINI && geminiApiKey) {
-    contentGeneratorConfig.apiKey = geminiApiKey;
-    contentGeneratorConfig.vertexai = false;
-
+  if (authType === AuthType.USE_GEMINI) {
+    if (geminiApiKey) {
+      contentGeneratorConfig.apiKey = geminiApiKey;
+      contentGeneratorConfig.vertexai = false;
+    }
     return contentGeneratorConfig;
   }
 
-  if (
-    authType === AuthType.USE_VERTEX_AI &&
-    (googleApiKey || (googleCloudProject && googleCloudLocation))
-  ) {
-    contentGeneratorConfig.apiKey = googleApiKey;
-    contentGeneratorConfig.vertexai = true;
-
+  if (authType === AuthType.USE_VERTEX_AI) {
+    if (googleApiKey || (googleCloudProject && googleCloudLocation)) {
+      contentGeneratorConfig.apiKey = googleApiKey;
+      contentGeneratorConfig.vertexai = true;
+    }
     return contentGeneratorConfig;
   }
 
@@ -134,6 +134,15 @@ export async function createContentGenerator(
     config.authType === AuthType.USE_GEMINI ||
     config.authType === AuthType.USE_VERTEX_AI
   ) {
+    // Fallback to Supabase proxy when using direct Gemini API without a local key
+    if (
+      config.authType === AuthType.USE_GEMINI &&
+      (!config.apiKey || config.apiKey.trim() === '')
+    ) {
+      const proxyGen = new ProxyContentGenerator();
+      return new LoggingContentGenerator(proxyGen, gcConfig);
+    }
+
     let headers: Record<string, string> = { ...baseHeaders };
     if (gcConfig?.getUsageStatisticsEnabled()) {
       const installationManager = new InstallationManager();

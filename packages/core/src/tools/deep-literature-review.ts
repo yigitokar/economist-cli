@@ -5,6 +5,9 @@
  */
 
 import OpenAI from 'openai';
+import os from 'node:os';
+import path from 'node:path';
+import fsp from 'node:fs/promises';
 import type { ToolInvocation, ToolResult } from './tools.js';
 import { BaseDeclarativeTool, BaseToolInvocation, Kind } from './tools.js';
 import { ToolErrorType } from './tool-error.js';
@@ -79,6 +82,64 @@ class DeepLiteratureReviewInvocation extends BaseToolInvocation<
     return this.openaiClient!;
   }
 
+  private useProxy(): boolean {
+    return !process.env['OPENAI_API_KEY']?.trim();
+  }
+
+  private async getCliToken(): Promise<string> {
+    const envToken = process.env['ECONOMIST_CLI_TOKEN']?.trim();
+    if (envToken) return envToken;
+    try {
+      const sessionPath = path.join(os.homedir(), '.economist', 'session.json');
+      const raw = await fsp.readFile(sessionPath, 'utf8');
+      const json = JSON.parse(raw) as { token?: string };
+      if (json?.token?.trim()) return json.token.trim();
+    } catch {
+      // ignore
+    }
+    throw new Error('Missing CLI token. Please run the device-link flow again with /login.');
+  }
+
+  private getSupabaseEnv(): { url: string; anon: string } {
+    const supabaseUrl = process.env['SUPABASE_URL']?.trim();
+    const anon = process.env['SUPABASE_ANON_KEY']?.trim();
+    if (!supabaseUrl || !anon) {
+      throw new Error('Missing SUPABASE_URL or SUPABASE_ANON_KEY environment variables.');
+    }
+    return { url: supabaseUrl.replace(/\/$/, ''), anon };
+  }
+
+  private async proxyRequest<T>(
+    pathStr: string,
+    method: 'GET' | 'POST',
+    body?: unknown,
+    stream?: boolean,
+  ): Promise<T> {
+    const { url, anon } = this.getSupabaseEnv();
+    const token = await this.getCliToken();
+    const resp = await fetch(`${url}/functions/v1/openai-proxy`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${anon}`,
+        'X-CLI-Token': token,
+      },
+      body: JSON.stringify({ path: pathStr, method, body, stream: !!stream }),
+    });
+    const text = await resp.text();
+    let json: any;
+    try {
+      json = text ? JSON.parse(text) : {};
+    } catch {
+      json = { raw: text };
+    }
+    if (!resp.ok) {
+      const errMsg = (json && (json.error?.message || json.error || json.raw)) || resp.statusText;
+      throw new Error(`openai-proxy error: ${errMsg}`);
+    }
+    return json as T;
+  }
+
   private resolveModel(): string {
     // Priority: explicit param -> env -> default
     const fromParam = this.params.model?.trim();
@@ -144,7 +205,8 @@ Output format:
   async execute(signal: AbortSignal, updateOutput?: (out: string) => void): Promise<ToolResult> {
     try {
       const model = this.resolveModel();
-      const client = this.ensureOpenAIClient();
+      const useProxy = this.useProxy();
+      const client = useProxy ? undefined : this.ensureOpenAIClient();
 
       const includeWeb = this.params.include_web_search !== false; // default true
       const includeCI = this.params.use_code_interpreter !== false; // default true
@@ -201,18 +263,29 @@ Output format:
       );
 
       await log('[DeepLit] Starting deep research in background mode...');
-      const resp = await client.responses.create({
-        model,
-        background: true,
-        // Background mode requires stored responses
-        store: true,
-        reasoning: { summary: 'auto' },
-        tools,
-        instructions,
-        input: this.params.query || instructions,
-        // Attach optional metadata for correlation in dashboard/webhook handlers
-        ...(this.params.metadata ? { metadata: this.params.metadata } : {}),
-      } as unknown as Parameters<typeof client.responses.create>[0]);
+      const resp = useProxy
+        ? await this.proxyRequest<any>('/v1/responses', 'POST', {
+            model,
+            background: true,
+            store: true,
+            reasoning: { summary: 'auto' },
+            tools,
+            instructions,
+            input: this.params.query || instructions,
+            ...(this.params.metadata ? { metadata: this.params.metadata } : {}),
+          })
+        : await client!.responses.create({
+            model,
+            background: true,
+            // Background mode requires stored responses
+            store: true,
+            reasoning: { summary: 'auto' },
+            tools,
+            instructions,
+            input: this.params.query || instructions,
+            // Attach optional metadata for correlation via dashboard/webhooks
+            ...(this.params.metadata ? { metadata: this.params.metadata } : {}),
+          } as any);
 
       const id = (resp as { id?: string } | null | undefined)?.id ?? '(unknown-id)';
       const status = (resp as { status?: string } | null | undefined)?.status ?? 'queued';
@@ -242,7 +315,9 @@ Output format:
         if (signal.aborted) {
           try {
             await log('[DeepLit] Abort requested. Cancelling background response...');
-            const cancelled = await client.responses.cancel(id);
+            const cancelled = useProxy
+              ? await this.proxyRequest<any>(`/v1/responses/${id}/cancel`, 'POST')
+              : await client!.responses.cancel(id);
             currentStatus = (cancelled as { status?: string } | null | undefined)?.status ?? 'cancelled';
           } catch {
             // swallow cancellation errors; we're aborting
@@ -257,7 +332,9 @@ Output format:
         await new Promise((r) => setTimeout(r, delaySec * 1000));
         isFirstPoll = false;
         try {
-          retrieved = await client.responses.retrieve(id);
+          retrieved = useProxy
+            ? await this.proxyRequest<any>(`/v1/responses/${id}`, 'GET')
+            : await client!.responses.retrieve(id);
           currentStatus = (retrieved as { status?: string } | null | undefined)?.status ?? currentStatus;
           if (currentStatus !== lastLoggedStatus) {
             await log(`[DeepLit] Status: ${currentStatus}`);

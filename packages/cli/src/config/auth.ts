@@ -17,10 +17,13 @@ export function validateAuthMethod(authMethod: string): string | null {
   }
 
   if (authMethod === AuthType.USE_GEMINI) {
-    if (!process.env['GEMINI_API_KEY']) {
-      return 'GEMINI_API_KEY environment variable not found. Add that to your environment and try again (no reload needed if using .env)!';
-    }
-    return null;
+    // Accept either a local Gemini API key OR Supabase proxy fallback
+    const hasLocalKey = !!process.env['GEMINI_API_KEY'];
+    const hasProxyEnv = !!process.env['SUPABASE_URL'] && !!process.env['SUPABASE_ANON_KEY'];
+    if (hasLocalKey || hasProxyEnv) return null;
+    return (
+      'GEMINI_API_KEY environment variable not found. Either set GEMINI_API_KEY, or configure Supabase proxy by setting SUPABASE_URL and SUPABASE_ANON_KEY.'
+    );
   }
 
   if (authMethod === AuthType.USE_VERTEX_AI) {
