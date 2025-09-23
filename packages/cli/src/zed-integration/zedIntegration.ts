@@ -11,7 +11,7 @@ import type {
   GeminiChat,
   ToolResult,
   ToolCallConfirmationDetails,
-} from '@google/gemini-cli-core';
+} from '@careresearch/econ-core';
 import {
   AuthType,
   logToolCall,
@@ -24,7 +24,7 @@ import {
   getErrorStatus,
   MCPServerConfig,
   DiscoveredMCPTool,
-} from '@google/gemini-cli-core';
+} from '@careresearch/econ-core';
 import * as acp from './acp.js';
 import { AcpFileSystemService } from './fileSystemService.js';
 import { Readable, Writable } from 'node:stream';

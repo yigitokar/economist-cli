@@ -5,7 +5,7 @@
  */
 
 import { type CommandModule } from 'yargs';
-import { FatalConfigError, getErrorMessage } from '@google/gemini-cli-core';
+import { FatalConfigError, getErrorMessage } from '@careresearch/econ-core';
 import { enableExtension } from '../../config/extension.js';
 import { SettingScope } from '../../config/settings.js';
 

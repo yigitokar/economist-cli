@@ -6,11 +6,11 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import type { LoadedSettings, SettingScope } from '../../config/settings.js';
-import { AuthType, type Config } from '@google/gemini-cli-core';
+import { AuthType, type Config } from '@careresearch/econ-core';
 import {
   clearCachedCredentialFile,
   getErrorMessage,
-} from '@google/gemini-cli-core';
+} from '@careresearch/econ-core';
 import { runExitCleanup } from '../../utils/cleanup.js';
 
 export const useAuthCommand = (

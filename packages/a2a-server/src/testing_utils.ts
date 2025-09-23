@@ -9,18 +9,18 @@ import type {
   TaskStatusUpdateEvent,
   SendStreamingMessageSuccessResponse,
 } from '@a2a-js/sdk';
-import { ApprovalMode } from '@google/gemini-cli-core';
+import { ApprovalMode } from '@careresearch/econ-core';
 import {
   BaseDeclarativeTool,
   BaseToolInvocation,
   Kind,
-} from '@google/gemini-cli-core';
+} from '@careresearch/econ-core';
 import type {
   Config,
   ToolCallConfirmationDetails,
   ToolResult,
   ToolInvocation,
-} from '@google/gemini-cli-core';
+} from '@careresearch/econ-core';
 import { expect, vi } from 'vitest';
 
 export function createMockConfig(

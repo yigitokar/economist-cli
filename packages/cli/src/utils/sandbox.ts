@@ -16,8 +16,8 @@ import {
   SETTINGS_DIRECTORY_NAME,
 } from '../config/settings.js';
 import { promisify } from 'node:util';
-import type { Config, SandboxConfig } from '@google/gemini-cli-core';
-import { FatalSandboxError } from '@google/gemini-cli-core';
+import type { Config, SandboxConfig } from '@careresearch/econ-core';
+import { FatalSandboxError } from '@careresearch/econ-core';
 import { ConsolePatcher } from '../ui/utils/ConsolePatcher.js';
 
 const execAsync = promisify(exec);

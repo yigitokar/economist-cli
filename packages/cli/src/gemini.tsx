@@ -30,7 +30,7 @@ import {
   runExitCleanup,
 } from './utils/cleanup.js';
 import { getCliVersion } from './utils/version.js';
-import type { Config } from '@google/gemini-cli-core';
+import type { Config } from '@careresearch/econ-core';
 import {
   sessionId,
   logUserPrompt,
@@ -41,7 +41,7 @@ import {
   IdeConnectionType,
   FatalConfigError,
   uiTelemetryService,
-} from '@google/gemini-cli-core';
+} from '@careresearch/econ-core';
 import { validateAuthMethod } from './config/auth.js';
 import { setMaxSizedBoxDebugging } from './ui/components/shared/MaxSizedBox.js';
 import { validateNonInteractiveAuth } from './validateNonInterActiveAuth.js';

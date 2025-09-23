@@ -20,7 +20,7 @@ import { StatsDisplay } from './StatsDisplay.js';
 import { ModelStatsDisplay } from './ModelStatsDisplay.js';
 import { ToolStatsDisplay } from './ToolStatsDisplay.js';
 import { SessionSummaryDisplay } from './SessionSummaryDisplay.js';
-import type { Config } from '@google/gemini-cli-core';
+import type { Config } from '@careresearch/econ-core';
 import { Help } from './Help.js';
 import type { SlashCommand } from '../commands/types.js';
 

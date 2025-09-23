@@ -9,8 +9,8 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { renderHook, waitFor, act } from '@testing-library/react';
 import { useAtCompletion } from './useAtCompletion.js';
-import type { Config, FileSearch } from '@google/gemini-cli-core';
-import { FileSearchFactory } from '@google/gemini-cli-core';
+import type { Config, FileSearch } from '@careresearch/econ-core';
+import { FileSearchFactory } from '@careresearch/econ-core';
 import type { FileSystemStructure } from '@google/gemini-cli-test-utils';
 import { createTmpDir, cleanupTmpDir } from '@google/gemini-cli-test-utils';
 import { useState } from 'react';

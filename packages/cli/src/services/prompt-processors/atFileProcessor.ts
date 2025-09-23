@@ -7,7 +7,7 @@
 import {
   flatMapTextParts,
   readPathFromWorkspace,
-} from '@google/gemini-cli-core';
+} from '@careresearch/econ-core';
 import type { CommandContext } from '../../ui/commands/types.js';
 import { MessageType } from '../../ui/types.js';
 import {

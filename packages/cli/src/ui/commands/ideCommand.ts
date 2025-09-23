@@ -4,13 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { Config, IdeClient, File } from '@google/gemini-cli-core';
+import type { Config, IdeClient, File } from '@careresearch/econ-core';
 import {
   getIdeInstaller,
   IDEConnectionStatus,
   ideContext,
   GEMINI_CLI_COMPANION_EXTENSION_NAME,
-} from '@google/gemini-cli-core';
+} from '@careresearch/econ-core';
 import path from 'node:path';
 import type {
   CommandContext,

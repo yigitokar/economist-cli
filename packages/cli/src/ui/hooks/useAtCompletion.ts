@@ -5,8 +5,8 @@
  */
 
 import { useEffect, useReducer, useRef } from 'react';
-import type { Config, FileSearch } from '@google/gemini-cli-core';
-import { FileSearchFactory, escapePath } from '@google/gemini-cli-core';
+import type { Config, FileSearch } from '@careresearch/econ-core';
+import { FileSearchFactory, escapePath } from '@careresearch/econ-core';
 import type { Suggestion } from '../components/SuggestionsDisplay.js';
 import { MAX_SUGGESTIONS_TO_SHOW } from '../components/SuggestionsDisplay.js';
 

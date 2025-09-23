@@ -12,7 +12,7 @@ import { ToolCallStatus } from '../../types.js';
 import { ToolMessage } from './ToolMessage.js';
 import { ToolConfirmationMessage } from './ToolConfirmationMessage.js';
 import { Colors } from '../../colors.js';
-import type { Config } from '@google/gemini-cli-core';
+import type { Config } from '@careresearch/econ-core';
 import { SHELL_COMMAND_NAME } from '../../constants.js';
 
 interface ToolGroupMessageProps {
