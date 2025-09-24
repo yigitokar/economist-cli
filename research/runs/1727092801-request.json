@@ -1,0 +1,14 @@
+{
+  "model": "o4-mini-deep-research-2025-06-26",
+  "input": [
+    {
+      "role": "user",
+      "content": "### Research Brief\n\n*   **Objective**: Determine the number of economists in the U.S. workforce, including recent figures and historical trends. The research will also encompass related professions such as financial analysts, academics, and data scientists with economics backgrounds.\n*   **Context**: The user is seeking a comprehensive overview for general research purposes.\n*   **Constraints**: The research will rely on publicly available data and should be completed promptly.\n*   **Sources**: Prioritize official U.S. government sources like the Bureau of Labor Statistics (BLS) and the Census Bureau (ACS). Reports from professional organizations like the American Economic Association (AEA) may also be included.\n*   **Deliverables**: A detailed report in Markdown format containing:\n    *   The most recent estimate of the number of \"Economists.\"\n    *   Estimates for related professions.\n    *   Historical employment trends for these roles.\n    *   Breakdowns by industry or location where available.\n    *   Clear citation of all data sources.\n*   **Time Limit**: Not specified; will aim for a timely response.\n*   **Success Criteria**: The final report provides a clear, data-driven answer with sufficient detail and sourcing to be credible for research use."
+    }
+  ],
+  "tools": [
+    {
+      "type": "web_search_preview"
+    }
+  ]
+}

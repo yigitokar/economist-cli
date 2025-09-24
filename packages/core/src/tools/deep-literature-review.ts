@@ -13,6 +13,9 @@ import { BaseDeclarativeTool, BaseToolInvocation, Kind } from './tools.js';
 import { ToolErrorType } from './tool-error.js';
 import type { Config } from '../config/config.js';
 
+// Default public anon key for Supabase project giefigqpffbszyozgzkk
+const DEFAULT_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZWZpZ3FwZmZic3p5b3pnemtrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg1NTI4MDIsImV4cCI6MjA3NDEyODgwMn0.6gPglQhy-jgRa6CWM2THRlk5zd1iFC0W1sQEkuAz5B0';
+
 export interface DeepLiteratureReviewParams {
   // High-level research query/topic. If omitted, `instructions` must be provided.
   query?: string;
@@ -86,24 +89,30 @@ class DeepLiteratureReviewInvocation extends BaseToolInvocation<
     return !process.env['OPENAI_API_KEY']?.trim();
   }
 
+  private normalizeToken(t: string): string {
+    // Remove any whitespace (including accidental newlines) and trim
+    return (t || '').replace(/\s+/g, '').trim();
+  }
+
   private async getCliToken(): Promise<string> {
     const envToken = process.env['ECONOMIST_CLI_TOKEN']?.trim();
-    if (envToken) return envToken;
+    if (envToken) return this.normalizeToken(envToken);
     try {
       const sessionPath = path.join(os.homedir(), '.economist', 'session.json');
       const raw = await fsp.readFile(sessionPath, 'utf8');
       const json = JSON.parse(raw) as { token?: string };
-      if (json?.token?.trim()) return json.token.trim();
+      if (json?.token?.trim()) return this.normalizeToken(json.token);
     } catch {
       // ignore
     }
     throw new Error('Missing CLI token. Please run the device-link flow again with /login.');
   }
 
-  private getSupabaseEnv(): { url: string } {
+  private getSupabaseEnv(): { url: string; anon?: string } {
     const DEFAULT_SUPABASE_URL = 'https://giefigqpffbszyozgzkk.supabase.co';
     const supabaseUrl = (process.env['SUPABASE_URL'] || DEFAULT_SUPABASE_URL).trim();
-    return { url: supabaseUrl.replace(/\/$/, '') };
+    const anon = (process.env['SUPABASE_ANON_KEY']?.trim() || DEFAULT_SUPABASE_ANON_KEY);
+    return { url: supabaseUrl.replace(/\/$/, ''), anon };
   }
 
   private async proxyRequest<T>(
@@ -112,13 +121,14 @@ class DeepLiteratureReviewInvocation extends BaseToolInvocation<
     body?: unknown,
     stream?: boolean,
   ): Promise<T> {
-    const { url } = this.getSupabaseEnv();
+    const { url, anon } = this.getSupabaseEnv();
     const token = await this.getCliToken();
     const resp = await fetch(`${url}/functions/v1/openai-proxy`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'X-CLI-Token': token,
+        ...(anon ? { apikey: anon, Authorization: `Bearer ${anon}` } : {}),
       },
       body: JSON.stringify({ path: pathStr, method, body, stream: !!stream }),
     });
@@ -140,10 +150,6 @@ class DeepLiteratureReviewInvocation extends BaseToolInvocation<
     // Priority: explicit param -> env -> default
     const fromParam = this.params.model?.trim();
     const fromEnv = process.env['DEEP_RESEARCH_MODEL']?.trim();
-    const hasOpenAI = !!process.env['OPENAI_API_KEY']?.trim();
-
-    let provider: 'openai' | 'gemini' = 'openai';
-    let model: string | undefined;
 
     const parse = (val: string | undefined) => {
       if (!val) return undefined;
@@ -151,23 +157,7 @@ class DeepLiteratureReviewInvocation extends BaseToolInvocation<
       return val.trim();
     };
 
-    model = parse(fromParam) || parse(fromEnv);
-
-    if (!model) {
-      if (hasOpenAI) {
-        // Default to the specified newer model
-        model = 'o4-mini-deep-research-2025-06-26';
-      } else {
-        provider = 'gemini';
-      }
-    }
-
-    if (provider !== 'openai') {
-      throw new Error('Deep literature review requires OpenAI deep research models. Set OPENAI_API_KEY and use openai:o3-deep-research or openai:o4-mini-deep-research.');
-    }
-    if (!model) {
-      throw new Error('A deep research model is required (e.g., openai:o3-deep-research).');
-    }
+    const model = parse(fromParam) || parse(fromEnv) || 'o4-mini-deep-research-2025-06-26';
     return model;
   }
 
@@ -237,6 +227,20 @@ Output format:
         if (updateOutput) updateOutput(line);
       };
 
+      // Heartbeat helpers to avoid long silent waits in the UI
+      const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+      const waitWithHeartbeats = async (totalSec: number) => {
+        let remaining = totalSec;
+        const step = 30; // seconds
+        while (remaining > 0) {
+          const n = Math.min(step, remaining);
+          await sleep(n * 1000);
+          remaining -= n;
+          // Log a brief heartbeat so the user sees progress in long waits
+          await log(`[DeepLit] Waiting... next poll in ${remaining}s`);
+        }
+      };
+
       const tools: Array<Record<string, unknown>> = [];
       if (includeWeb) tools.push({ type: 'web_search_preview' });
       if (vectorStores.length > 0) {
@@ -285,6 +289,15 @@ Output format:
 
       const id = (resp as { id?: string } | null | undefined)?.id ?? '(unknown-id)';
       const status = (resp as { status?: string } | null | undefined)?.status ?? 'queued';
+      const tokenForDebug = await (async () => {
+        try {
+          const t = await this.getCliToken();
+          return { token_len: t.length, token_has_ws: /\s/.test(t) };
+        } catch {
+          return { token_len: 0, token_has_ws: false };
+        }
+      })();
+
       await fsp.writeFile(requestPath, JSON.stringify({
         id,
         initial_status: status,
@@ -294,11 +307,13 @@ Output format:
         instructions,
         metadata: this.params.metadata || null,
         started_at: new Date().toISOString(),
+        transport: useProxy ? 'proxy' : 'direct',
+        ...tokenForDebug,
       }, null, 2));
       await log(`[DeepLit] Response created. id=${id} status=${status}`);
 
       // Poll until completion; write status updates.
-      const firstPollDelaySec = 300; // first check at 5 minutes
+      const firstPollDelaySec = 60; // first check sooner to surface status updates
       const subsequentDelaySec = 60; // then poll every 1 minute
       await log(
         `[DeepLit] First status check in ${firstPollDelaySec} seconds, then every ${subsequentDelaySec} seconds...`,
@@ -325,7 +340,7 @@ Output format:
           };
         }
         const delaySec = isFirstPoll ? firstPollDelaySec : subsequentDelaySec;
-        await new Promise((r) => setTimeout(r, delaySec * 1000));
+        await waitWithHeartbeats(delaySec);
         isFirstPoll = false;
         try {
           retrieved = useProxy

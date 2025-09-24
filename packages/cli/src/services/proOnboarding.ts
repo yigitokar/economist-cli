@@ -13,6 +13,7 @@ import open from 'open';
 const TOKEN_ENV = 'ECONOMIST_CLI_TOKEN';
 const SUPABASE_URL_ENV = 'SUPABASE_URL';
 const DEFAULT_SUPABASE_URL = 'https://giefigqpffbszyozgzkk.supabase.co';
+const DEFAULT_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZWZpZ3FwZmZic3p5b3pnemtrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg1NTI4MDIsImV4cCI6MjA3NDEyODgwMn0.6gPglQhy-jgRa6CWM2THRlk5zd1iFC0W1sQEkuAz5B0';
 
 const CONFIG_DIR = path.join(os.homedir(), '.economist');
 const SESSION_FILE = path.join(CONFIG_DIR, 'session.json');
@@ -99,7 +100,8 @@ export async function ensureProOnboarding(): Promise<void> {
 
   const supabaseUrl = getEnvOrDefault(SUPABASE_URL_ENV, DEFAULT_SUPABASE_URL);
   const base = supabaseUrl.replace(/\/$/, '');
-  const headers: Record<string, string> = {};
+  const anon = process.env['SUPABASE_ANON_KEY']?.trim() || DEFAULT_SUPABASE_ANON_KEY;
+  const headers: Record<string, string> = { apikey: anon, Authorization: `Bearer ${anon}` };
 
   // Step 1: Issue link code
   const issueUrl = `${base}/functions/v1/issue-link-code`;

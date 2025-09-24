@@ -36,11 +36,21 @@ Deno.serve(async (req: Request) => {
   const openaiKey = Deno.env.get("OPENAI_API_KEY");
   const freeMode = Deno.env.get("FREE_MODE") === "true";
 
+  // Debug (safe): log project URL and FREE_MODE only
+  try {
+    console.log(
+      `[openai-proxy] supabaseUrl=${supabaseUrl} freeMode=${freeMode}`,
+    );
+  } catch {}
+
   if (!supabaseUrl || !serviceKey) return json({ error: "Missing env SUPABASE_URL/SUPABASE_SERVICE_ROLE_KEY" }, 500);
   if (!openaiKey) return json({ error: "Missing env OPENAI_API_KEY" }, 500);
 
   const cliToken = req.headers.get("x-cli-token") || req.headers.get("X-CLI-Token");
-  if (!cliToken) return json({ error: "Missing X-CLI-Token" }, 401);
+  if (!cliToken) {
+    try { console.log("[openai-proxy] missing X-CLI-Token"); } catch {}
+    return json({ error: "Missing X-CLI-Token" }, 401);
+  }
 
   const adminClient = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } });
 
@@ -53,7 +63,11 @@ Deno.serve(async (req: Request) => {
       .gt("expires_at", new Date().toISOString())
       .maybeSingle();
     if (tokenErr) throw tokenErr;
-    if (!tokenRow) return json({ error: "Unauthorized" }, 401);
+    try { console.log(`[openai-proxy] token_hash_prefix=${tokenHash.slice(0,8)} found=${!!tokenRow}`); } catch {}
+    if (!tokenRow) {
+      try { console.log("[openai-proxy] unauthorized: token not found or expired"); } catch {}
+      return json({ error: "Unauthorized" }, 401);
+    }
 
     if (!freeMode) {
       const { data: sub, error: subErr } = await adminClient
@@ -65,7 +79,10 @@ Deno.serve(async (req: Request) => {
         .maybeSingle();
       if (subErr) throw subErr;
       const active = sub && (sub.status === "active" || sub.status === "trialing") && new Date(sub.current_period_end).getTime() > Date.now();
-      if (!active) return json({ error: "Subscription required" }, 402);
+      if (!active) {
+        try { console.log("[openai-proxy] subscription required"); } catch {}
+        return json({ error: "Subscription required" }, 402);
+      }
     }
 
     const payload = await req.json().catch(() => ({})) as {
@@ -107,6 +124,7 @@ Deno.serve(async (req: Request) => {
     if (!upstream.ok) return json({ error: data }, upstream.status);
     return json(data, upstream.status);
   } catch (e) {
+    try { console.log("[openai-proxy] error:", String((e as any)?.message ?? e)); } catch {}
     return json({ error: String((e as any)?.message ?? e) }, 500);
   }
 });

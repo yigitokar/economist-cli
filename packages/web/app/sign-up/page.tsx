@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { postWithAuth } from "@/lib/api";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,7 @@ function useQueryParam(name: string) {
 }
 
 export default function SignUpPage() {
+  const router = useRouter();
   const code = useQueryParam("code");
   const [status, setStatus] = useState<
     | "idle"
@@ -29,10 +31,20 @@ export default function SignUpPage() {
   >("idle");
   const [error, setError] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    // Persist initial device link code across the OAuth roundtrip
+    if (code && typeof window !== "undefined") {
+      try {
+        window.sessionStorage.setItem("device_code", code);
+      } catch {}
+    }
+  }, [code]);
 
   useEffect(() => {
     const run = async () => {
@@ -43,15 +55,30 @@ export default function SignUpPage() {
         setStatus("login_required");
         return;
       }
-      if (!code) {
+      const deviceCode =
+        code || (typeof window !== "undefined" ? window.sessionStorage.getItem("device_code") : null);
+      if (!deviceCode) {
+        // If user came from website and just signed in (no device-link code), send them to success page.
+        try {
+          router.replace('/success');
+          return;
+        } catch {}
         setStatus("need_code");
         return;
       }
       try {
         // FREE MODE: directly finalize link without Stripe checkout
         setStatus("finalizing");
-        await postWithAuth("finalize-link", { code });
+        await postWithAuth("finalize-link", { code: deviceCode });
         setStatus("done");
+        try {
+          // Redirect to a friendly success page with guidance
+          if (typeof window !== "undefined") {
+            try { window.sessionStorage.removeItem("device_code"); } catch {}
+          }
+          router.replace(`/success?code=${encodeURIComponent(deviceCode)}`);
+          return;
+        } catch {}
       } catch (e: any) {
         setError(e?.message ?? String(e));
         setStatus("error");
@@ -68,6 +95,17 @@ export default function SignUpPage() {
       provider: "google",
       options: { redirectTo: typeof window !== "undefined" ? window.location.href : undefined },
     });
+  };
+
+  const handleSignOut = async () => {
+    try {
+      setSigningOut(true);
+      await supabase.auth.signOut();
+    } finally {
+      setSigningOut(false);
+      // Return to login state so user can pick a different account
+      setStatus("login_required");
+    }
   };
 
   return (
@@ -129,6 +167,17 @@ export default function SignUpPage() {
               You are signed in, but the device code is missing. Start from the CLI to generate a link
               (or paste the link here after you run the device-link command).
             </p>
+            <div className="mt-4 flex gap-3">
+              <Button
+                variant="ghost"
+                onClick={handleSignOut}
+                disabled={signingOut}
+                className="bg-transparent border border-white/20 text-white hover:bg-white/10"
+              >
+                {signingOut ? "Signing out…" : "Sign out"}
+              </Button>
+              <a href="/" className="self-center text-white/70 hover:text-white text-sm">Back to home</a>
+            </div>
           </div>
         )}
 
@@ -146,6 +195,17 @@ export default function SignUpPage() {
             <h2 className="text-white font-semibold mb-2">Error</h2>
             <p className="text-red-300 text-sm">{error}</p>
             <p className="text-white/60 text-sm mt-1">Please retry from the CLI.</p>
+            <div className="mt-4 flex gap-3">
+              <Button
+                variant="ghost"
+                onClick={handleSignOut}
+                disabled={signingOut}
+                className="bg-transparent border border-white/20 text-white hover:bg-white/10"
+              >
+                {signingOut ? "Signing out…" : "Sign out"}
+              </Button>
+              <a href="/" className="self-center text-white/70 hover:text-white text-sm">Back to home</a>
+            </div>
           </div>
         )}
 

@@ -13,14 +13,15 @@ import open from 'open';
 const TOKEN_ENV = 'ECONOMIST_CLI_TOKEN';
 const SUPABASE_URL_ENV = 'SUPABASE_URL';
 const SUPABASE_ANON_KEY_ENV = 'SUPABASE_ANON_KEY';
+const DEFAULT_SUPABASE_URL = 'https://giefigqpffbszyozgzkk.supabase.co';
+const DEFAULT_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZWZpZ3FwZmZic3p5b3pnemtrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg1NTI4MDIsImV4cCI6MjA3NDEyODgwMn0.6gPglQhy-jgRa6CWM2THRlk5zd1iFC0W1sQEkuAz5B0';
 
 const CONFIG_DIR = path.join(os.homedir(), '.economist');
 const SESSION_FILE = path.join(CONFIG_DIR, 'session.json');
 
-function requireEnv(name: string): string {
+function getEnvOrDefault(name: string, fallback?: string): string {
   const v = process.env[name]?.trim();
-  if (!v) throw new Error(`Missing required environment variable: ${name}`);
-  return v;
+  return v || (fallback ?? '');
 }
 
 async function postJSON(url: string, body: unknown, headers: Record<string, string>) {
@@ -74,10 +75,10 @@ export const loginCommand: SlashCommand = {
   kind: CommandKind.BUILT_IN,
   action: async (_context, _args): Promise<MessageActionReturn> => {
     try {
-      const supabaseUrl = requireEnv(SUPABASE_URL_ENV);
-      const anonKey = requireEnv(SUPABASE_ANON_KEY_ENV);
+      const supabaseUrl = getEnvOrDefault(SUPABASE_URL_ENV, DEFAULT_SUPABASE_URL);
+      const anonKey = getEnvOrDefault(SUPABASE_ANON_KEY_ENV, DEFAULT_SUPABASE_ANON_KEY);
       const base = supabaseUrl.replace(/\/$/, '');
-      const headers = { Authorization: `Bearer ${anonKey}` };
+      const headers = { apikey: anonKey, Authorization: `Bearer ${anonKey}` };
 
       // Step 1: Issue link code
       const issueUrl = `${base}/functions/v1/issue-link-code`;

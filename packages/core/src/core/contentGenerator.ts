@@ -19,7 +19,6 @@ import type { Config } from '../config/config.js';
 
 import type { UserTierId } from '../code_assist/types.js';
 import { LoggingContentGenerator } from './loggingContentGenerator.js';
-import { ProxyContentGenerator } from './proxyContentGenerator.js';
 import { InstallationManager } from '../utils/installationManager.js';
 
 /**
@@ -134,13 +133,14 @@ export async function createContentGenerator(
     config.authType === AuthType.USE_GEMINI ||
     config.authType === AuthType.USE_VERTEX_AI
   ) {
-    // Fallback to Supabase proxy when using direct Gemini API without a local key
+    // Do NOT proxy Gemini. Require a direct key or switch auth method.
     if (
       config.authType === AuthType.USE_GEMINI &&
       (!config.apiKey || config.apiKey.trim() === '')
     ) {
-      const proxyGen = new ProxyContentGenerator();
-      return new LoggingContentGenerator(proxyGen, gcConfig);
+      throw new Error(
+        'GEMINI_API_KEY is required for direct Gemini usage (no proxy). Set GEMINI_API_KEY, or switch to "Login with Google" or Vertex in settings.',
+      );
     }
 
     let headers: Record<string, string> = { ...baseHeaders };
