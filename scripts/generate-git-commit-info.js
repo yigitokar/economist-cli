@@ -21,7 +21,16 @@ import { execSync } from 'node:child_process';
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { readPackageUp } from 'read-package-up';
+// Optional dependency: only used when available. In environments where the
+// root dependencies aren't installed (e.g., Vercel building a subdir like
+// packages/web), this dynamic import may fail. We guard it so the script can
+// still proceed and generate placeholders instead of crashing.
+let readPackageUp;
+try {
+  ({ readPackageUp } = await import('read-package-up'));
+} catch {
+  // ignore: leave readPackageUp undefined
+}
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, '..');
@@ -49,8 +58,10 @@ try {
     gitCommitInfo = gitHash;
   }
 
-  const result = await readPackageUp();
-  cliVersion = result?.packageJson?.version ?? 'UNKNOWN';
+  if (typeof readPackageUp === 'function') {
+    const result = await readPackageUp();
+    cliVersion = result?.packageJson?.version ?? 'UNKNOWN';
+  }
 } catch {
   // ignore
 }
