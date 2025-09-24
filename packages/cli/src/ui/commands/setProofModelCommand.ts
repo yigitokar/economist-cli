@@ -49,7 +49,7 @@ async function persistEnvVar(rootDir: string, key: string, value: string) {
 export const setProofModelCommand: SlashCommand = {
   name: 'set',
   description:
-    'Set a runtime setting. Usage: /set PROOF_HELPER_MODEL "gemini 2.5 pro"|"gpt-5" OR /set DEEP_RESEARCH_MODEL "o4-mini"|"o3" OR /set GPT5_REASONING_EFFORT low|medium|high',
+    'Set a runtime setting. Usage: /set PROOF_HELPER_MODEL gemini 2.5 pro|gpt-5 OR /set DEEP_RESEARCH_MODEL o4-mini|o3 OR /set GPT5_REASONING_EFFORT low|medium|high (quotes optional)',
   kind: CommandKind.BUILT_IN,
   async action(_context, args): Promise<MessageActionReturn> {
     const trimmed = (args || '').trim();
@@ -58,7 +58,7 @@ export const setProofModelCommand: SlashCommand = {
         type: 'message',
         messageType: 'error',
         content:
-          'Usage: /set PROOF_HELPER_MODEL "gemini 2.5 pro"|"gpt-5" OR /set DEEP_RESEARCH_MODEL "o4-mini"|"o3" OR /set GPT5_REASONING_EFFORT low|medium|high',
+          'Usage: /set PROOF_HELPER_MODEL gemini 2.5 pro|gpt-5 OR /set DEEP_RESEARCH_MODEL o4-mini|o3 OR /set GPT5_REASONING_EFFORT low|medium|high (quotes optional)',
       };
     }
 
@@ -68,12 +68,15 @@ export const setProofModelCommand: SlashCommand = {
         type: 'message',
         messageType: 'error',
         content:
-          'Usage: /set PROOF_HELPER_MODEL "gemini 2.5 pro"|"gpt-5" OR /set DEEP_RESEARCH_MODEL "o4-mini"|"o3" OR /set GPT5_REASONING_EFFORT low|medium|high',
+          'Usage: /set PROOF_HELPER_MODEL gemini 2.5 pro|gpt-5 OR /set DEEP_RESEARCH_MODEL o4-mini|o3 OR /set GPT5_REASONING_EFFORT low|medium|high (quotes optional)',
       };
     }
 
     const key = m[1];
     const valuePart = (m[2] || '').trim();
+
+    // Helper: normalize a user-provided value by stripping surrounding quotes and lowercasing.
+    const normalizeValue = (v: string) => v.replace(/^['"]+|['"]+$/g, '').trim().toLowerCase();
 
     // Handle PROOF_HELPER_MODEL
     if (key.toUpperCase() === 'PROOF_HELPER_MODEL') {
@@ -85,7 +88,7 @@ export const setProofModelCommand: SlashCommand = {
         };
       }
       let envValue: string | null = null;
-      const lower = valuePart.toLowerCase();
+      const lower = normalizeValue(valuePart);
       if (lower === 'gemini 2.5 pro' || lower === 'gemini-2.5-pro') {
         envValue = 'gemini-2.5-pro';
       } else if (lower === 'gpt-5' || lower === 'openai:gpt-5') {
@@ -122,7 +125,7 @@ export const setProofModelCommand: SlashCommand = {
             'Current options: "o4-mini" (default) or "o3". This sets DEEP_RESEARCH_MODEL=openai:<model>.',
         };
       }
-      const lower = valuePart.toLowerCase();
+      const lower = normalizeValue(valuePart);
       let envValue: string | null = null;
       if (
         lower === 'o4-mini' ||
@@ -166,7 +169,7 @@ export const setProofModelCommand: SlashCommand = {
           content: 'Usage: /set GPT5_REASONING_EFFORT low|medium|high (default: low).',
         };
       }
-      const lower = valuePart.toLowerCase();
+      const lower = normalizeValue(valuePart);
       if (!['low', 'medium', 'high'].includes(lower)) {
         return {
           type: 'message',

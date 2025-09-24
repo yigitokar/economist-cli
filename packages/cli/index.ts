@@ -8,7 +8,7 @@
 
 import './src/gemini.js';
 import { main } from './src/gemini.js';
-import { FatalError } from '@google/gemini-cli-core';
+import { FatalError } from '@careresearch/econ-core';
 
 // --- Global Entry Point ---
 main().catch((error) => {

@@ -1,15 +1,15 @@
 {
-  "name": "@google/gemini-cli",
-  "version": "0.2.2",
-  "description": "Gemini CLI",
+  "name": "@careresearch/econ-agent",
+  "version": "0.2.4",
+  "description": "EconAgent (Economist) CLI",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/google-gemini/gemini-cli.git"
+    "url": "git+https://github.com/yigitokar/economist-cli.git"
   },
   "type": "module",
   "main": "dist/index.js",
   "bin": {
-    "gemini": "dist/index.js"
+    "economist": "dist/index.js"
   },
   "scripts": {
     "build": "node ../../scripts/build_package.js",
@@ -19,7 +19,8 @@
     "format": "prettier --write .",
     "test": "vitest run",
     "test:ci": "vitest run --coverage",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run build"
   },
   "files": [
     "dist"
@@ -28,7 +29,7 @@
     "sandboxImageUri": "us-docker.pkg.dev/gemini-code-dev/gemini-cli/sandbox:0.2.2"
   },
   "dependencies": {
-    "@google/gemini-cli-core": "file:../core",
+    "@careresearch/econ-core": "^0.2.4",
     "@google/genai": "1.13.0",
     "@iarna/toml": "^2.2.5",
     "@modelcontextprotocol/sdk": "^1.15.1",
@@ -80,5 +81,8 @@
   },
   "engines": {
     "node": ">=20"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

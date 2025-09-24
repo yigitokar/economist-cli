@@ -14,7 +14,7 @@ import type {
 } from './types.js';
 import { createMockCommandContext } from '../../test-utils/mockCommandContext.js';
 import type { Content } from '@google/genai';
-import type { GeminiClient } from '@google/gemini-cli-core';
+import type { GeminiClient } from '@careresearch/econ-core';
 
 import * as fsPromises from 'node:fs/promises';
 import { chatCommand } from './chatCommand.js';

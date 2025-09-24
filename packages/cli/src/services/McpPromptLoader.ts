@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { Config } from '@google/gemini-cli-core';
-import { getErrorMessage, getMCPServerPrompts } from '@google/gemini-cli-core';
+import type { Config } from '@careresearch/econ-core';
+import { getErrorMessage, getMCPServerPrompts } from '@careresearch/econ-core';
 import type {
   CommandContext,
   SlashCommand,

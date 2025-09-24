@@ -1,10 +1,10 @@
 {
-  "name": "@google/gemini-cli-core",
-  "version": "0.2.2",
-  "description": "Gemini CLI Core",
+  "name": "@careresearch/econ-core",
+  "version": "0.2.4",
+  "description": "EconAgent Core",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/google-gemini/gemini-cli.git"
+    "url": "git+https://github.com/yigitokar/economist-cli.git"
   },
   "type": "module",
   "main": "dist/index.js",
@@ -14,7 +14,8 @@
     "format": "prettier --write .",
     "test": "vitest run",
     "test:ci": "vitest run --coverage",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run build"
   },
   "files": [
     "dist"
@@ -82,5 +83,8 @@
   },
   "engines": {
     "node": ">=20"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

@@ -30,7 +30,7 @@ import {
   runExitCleanup,
 } from './utils/cleanup.js';
 import { getCliVersion } from './utils/version.js';
-import type { Config } from '@google/gemini-cli-core';
+import type { Config } from '@careresearch/econ-core';
 import {
   sessionId,
   logUserPrompt,
@@ -41,7 +41,7 @@ import {
   IdeConnectionType,
   FatalConfigError,
   uiTelemetryService,
-} from '@google/gemini-cli-core';
+} from '@careresearch/econ-core';
 import { validateAuthMethod } from './config/auth.js';
 import { setMaxSizedBoxDebugging } from './ui/components/shared/MaxSizedBox.js';
 import { validateNonInteractiveAuth } from './validateNonInterActiveAuth.js';
@@ -51,6 +51,7 @@ import { handleAutoUpdate } from './utils/handleAutoUpdate.js';
 import { appEvents, AppEvent } from './utils/events.js';
 import { SettingsContext } from './ui/contexts/SettingsContext.js';
 import { writeFileSync } from 'node:fs';
+import { ensureProOnboarding } from './services/proOnboarding.js';
 
 export function validateDnsResolutionOrder(
   order: string | undefined,
@@ -221,6 +222,9 @@ export async function main() {
       `${errorMessages.join('\n')}\nPlease fix the configuration file(s) and try again.`,
     );
   }
+
+  // Enforce Pro onboarding (device-link with Supabase + Stripe) before CLI starts
+  await ensureProOnboarding();
 
   const argv = await parseArguments(settings.merged);
   const extensions = loadExtensions(workspaceRoot);

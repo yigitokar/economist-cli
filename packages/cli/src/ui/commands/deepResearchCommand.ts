@@ -67,51 +67,23 @@ Phase 2 — Rewrite (Research Brief):
       )}
   using the write_file tool. Use a timestamp in the filename.
 
-Phase 3 — Execute (Provider call):
-- Immediately call the deep research provider after writing the brief. Provider is OpenAI; use the default model unless overridden by env.
-- If credentials are missing (e.g., OPENAI_API_KEY), inform the user and stop.
-- Save artifacts to the project:
-  - Request payload: ${path.join(
-        researchDir,
-        'runs',
-        '<timestamp>-request.json',
-      )}
-  - Results/report: ${path.join(
-        researchDir,
-        'results',
-        '<timestamp>-report.md',
-      )}
-  - Optional sources/citations JSON: ${path.join(
-        researchDir,
-        'results',
-        '<timestamp>-sources.json',
-      )}
-- Use write_file for saving artifacts. Keep outputs concise and clearly labeled.
+Phase 3 — Execute (Tool call):
+- Immediately invoke the deep_literature_review tool after writing the brief. This tool handles transport automatically: it uses OpenAI directly when OPENAI_API_KEY is available, or securely proxies via Supabase (using the CLI token) when it is not. Do not require OPENAI_API_KEY and do not run shell commands.
+- Pass either a concise 'query' (one-line topic) or the full 'instructions' (the Research Brief content). Prefer 'instructions' built from the brief.
+- Example tool input (conceptual):
+  { "instructions": "<Research Brief markdown>", "include_web_search": true }
+- The tool persists artifacts under .econ/deep-lit-runs/<timestamp>/ (request, status, response, report). Display the resulting report path to the user.
+- Keep the console output concise.
 
 Implementation notes (keep it simple for now):
 - Use the existing tools:
-  - write_file: to save the brief, request, and results
-  - run_shell_command: to invoke the provider (e.g., curl). The CLI may present a confirmation dialog for network calls.
+  - write_file: to save the brief file in ${path.join(researchDir, 'briefs')}.
+  - deep_literature_review: to run the background deep research job.
 
-Provider/model (fixed policy, env override):
-- Provider: OpenAI only.
-- Models allowed:
-  - Default: o4-mini-deep-research-2025-06-26
-  - Alternative: o3-deep-research-2025-06-26
-- Resolve from env like the proof helper: if DEEP_RESEARCH_MODEL is set to \`openai:o4-mini-deep-research-2025-06-26\` or \`openai:o3-deep-research-2025-06-26\`, use that; otherwise use the default.
-
-Example (OpenAI Responses API):
-  MODEL="\${DEEP_RESEARCH_MODEL#openai:}"
-  [ -z "\$MODEL" ] && MODEL="o4-mini-deep-research-2025-06-26"
-  curl -sS https://api.openai.com/v1/responses \\
-    -H "Authorization: Bearer \$OPENAI_API_KEY" \\
-    -H "Content-Type: application/json" \\
-    -d "{\
-      \"model\": \"\$MODEL\",\
-      \"input\": [ { \"role\": \"user\", \"content\": \"<research brief or question>\" } ]\
-    }"
-
-- If unavailable (no credentials) or the call fails, clearly state what is missing and exit Deep Research mode gracefully after providing the brief.
+Provider/model (policy):
+- The tool defaults to 'o4-mini-deep-research-2025-06-26' unless overridden by 'DEEP_RESEARCH_MODEL' (accepts 'openai:<model>' or raw model name).
+- Do not check for or gate on OPENAI_API_KEY; the tool decides direct vs proxy.
+- If the tool reports an error, display the error and stop gracefully.
 
 Important:
 - Keep the questions and summaries compact; avoid multi-screen walls of text.

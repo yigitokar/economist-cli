@@ -60,7 +60,7 @@ import {
   type Settings,
   loadEnvironment,
 } from './settings.js';
-import { GEMINI_DIR } from '@google/gemini-cli-core';
+import { GEMINI_DIR } from '@careresearch/econ-core';
 
 const MOCK_WORKSPACE_DIR = '/mock/workspace';
 // Use the (mocked) SETTINGS_DIRECTORY_NAME for consistency

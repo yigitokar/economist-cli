@@ -14,6 +14,9 @@ import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import { createContentGenerator } from '../core/contentGenerator.js';
 import OpenAI from 'openai';
+import os from 'node:os';
+// Default public anon key for Supabase project giefigqpffbszyozgzkk
+const DEFAULT_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZWZpZ3FwZmZic3p5b3pnemtrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg1NTI4MDIsImV4cCI6MjA3NDEyODgwMn0.6gPglQhy-jgRa6CWM2THRlk5zd1iFC0W1sQEkuAz5B0';
 
 // Prompts copied verbatim from prover.py
 const step1Prompt = `
@@ -342,7 +345,7 @@ Tip: You can keep working in another chat while this finishes.`,
     if (!openaiModel || openaiModel.length === 0) {
       throw new Error('PROOF_HELPER_MODEL is set to openai but model name is missing. Use PROOF_HELPER_MODEL=openai:<model>.');
     }
-    const client = this.ensureOpenAIClient();
+    const hasDirectKey = !!process.env['OPENAI_API_KEY']?.trim();
 
     const systemMsg = systemInstruction?.trim() ? systemInstruction.trim() : undefined;
 
@@ -372,7 +375,7 @@ Tip: You can keep working in another chat while this finishes.`,
 
     const isGpt5 = openaiModel.toLowerCase().startsWith('gpt-5');
     if (isGpt5) {
-      // Use Responses API with reasoning
+      // Use Responses API with reasoning. If no direct key, route via Supabase openai-proxy.
       const reasoningEffortEnv = process.env['GPT5_REASONING_EFFORT']?.trim()?.toLowerCase() as 'low' | 'medium' | 'high' | undefined;
       const defaultEffort: 'low' | 'medium' | 'high' = 'low';
       const reasoningEffort = (['low','medium','high'] as const).includes(reasoningEffortEnv ?? defaultEffort)
@@ -380,6 +383,23 @@ Tip: You can keep working in another chat while this finishes.`,
         : defaultEffort;
 
       // Responses API expects "input" as an array of role/content items
+      if (!hasDirectKey) {
+        const result = await this.callOpenAIProxy<any>(
+          '/v1/responses',
+          'POST',
+          {
+            model: openaiModel,
+            reasoning: { effort: reasoningEffort },
+            instructions: systemMsg,
+            input: userAssistantMessages,
+          },
+          false,
+        );
+        const outputText = this.extractFromResponses(result);
+        return outputText;
+      }
+
+      const client = this.ensureOpenAIClient();
       const resp = await client.responses.create(
         {
           model: openaiModel,
@@ -389,42 +409,14 @@ Tip: You can keep working in another chat while this finishes.`,
         },
         { signal: abortSignal },
       );
-
-      // Try multiple access patterns for robustness across SDK versions
-      const extractFromResponses = (r: unknown): string => {
-        const maybeObj = r as {
-          output_text?: unknown;
-          output?: Array<{ content?: Array<{ text?: unknown }> }>;
-          content?: Array<{ text?: unknown }>;
-        };
-        if (typeof maybeObj?.output_text === 'string') return maybeObj.output_text;
-        if (Array.isArray(maybeObj?.output)) {
-          const joined = maybeObj.output
-            .map((o) =>
-              Array.isArray(o?.content)
-                ? o.content
-                    .map((ci) => (typeof ci?.text === 'string' ? ci.text : ''))
-                    .filter(Boolean)
-                    .join('\n')
-                : ''
-            )
-            .join('\n');
-          if (joined.trim().length > 0) return joined;
-        }
-        if (Array.isArray(maybeObj?.content)) {
-          const joined = maybeObj.content
-            .map((ci) => (typeof ci?.text === 'string' ? ci.text : ''))
-            .filter(Boolean)
-            .join('\n');
-          if (joined.trim().length > 0) return joined;
-        }
-        return '';
-      };
-
-      const outputText = extractFromResponses(resp);
+      const outputText = this.extractFromResponses(resp);
       return outputText;
     } else {
       // Use Chat Completions for non-GPT-5 models
+      if (!hasDirectKey) {
+        throw new Error('OPENAI_API_KEY is required for non-GPT-5 OpenAI models. Either set OPENAI_API_KEY or use /set PROOF_HELPER_MODEL gpt-5 to route via proxy.');
+      }
+      const client = this.ensureOpenAIClient();
       const baseMessages = userAssistantMessages.map(({ role, content }) => ({
         role,
         content,
@@ -449,6 +441,93 @@ Tip: You can keep working in another chat while this finishes.`,
       return cc.choices?.[0]?.message?.content ?? '';
     }
 }
+
+  // --- OpenAI proxy helpers (Supabase Edge: openai-proxy) ---
+  private normalizeToken(t: string): string {
+    return (t || '').replace(/\s+/g, '').trim();
+  }
+
+  private async getCliToken(): Promise<string> {
+    const envToken = process.env['ECONOMIST_CLI_TOKEN']?.trim();
+    if (envToken) return this.normalizeToken(envToken);
+    try {
+      const sessionPath = path.join(os.homedir(), '.economist', 'session.json');
+      const raw = await fs.readFile(sessionPath, 'utf-8');
+      const json = JSON.parse(raw) as { token?: string };
+      if (json?.token?.trim()) return this.normalizeToken(json.token);
+    } catch {
+      // ignore
+    }
+    throw new Error('Missing CLI token. Please run the device-link flow again with /login.');
+  }
+
+  private getSupabaseEnv(): { url: string; anon?: string } {
+    const DEFAULT_SUPABASE_URL = 'https://giefigqpffbszyozgzkk.supabase.co';
+    const supabaseUrl = (process.env['SUPABASE_URL'] || DEFAULT_SUPABASE_URL).trim();
+    const anon = process.env['SUPABASE_ANON_KEY']?.trim() || DEFAULT_SUPABASE_ANON_KEY;
+    return { url: supabaseUrl.replace(/\/$/, ''), anon };
+  }
+
+  private async callOpenAIProxy<T>(
+    pathStr: string,
+    method: 'GET' | 'POST',
+    body?: unknown,
+    stream?: boolean,
+  ): Promise<T> {
+    const { url, anon } = this.getSupabaseEnv();
+    const token = await this.getCliToken();
+    const resp = await fetch(`${url}/functions/v1/openai-proxy`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CLI-Token': token,
+        ...(anon ? { apikey: anon, Authorization: `Bearer ${anon}` } : {}),
+      },
+      body: JSON.stringify({ path: pathStr, method, body, stream: !!stream }),
+    });
+    const text = await resp.text();
+    let json: any;
+    try {
+      json = text ? JSON.parse(text) : {};
+    } catch {
+      json = { raw: text };
+    }
+    if (!resp.ok) {
+      const errMsg = (json && (json.error?.message || json.error || json.raw)) || resp.statusText;
+      throw new Error(`openai-proxy error: ${errMsg}`);
+    }
+    return json as T;
+  }
+
+  private extractFromResponses(r: unknown): string {
+    const maybeObj = r as {
+      output_text?: unknown;
+      output?: Array<{ content?: Array<{ text?: unknown }> }>;
+      content?: Array<{ text?: unknown }>;
+    };
+    if (typeof maybeObj?.output_text === 'string') return maybeObj.output_text as string;
+    if (Array.isArray(maybeObj?.output)) {
+      const joined = (maybeObj.output as Array<{ content?: Array<{ text?: unknown }> }>)
+        .map((o) =>
+          Array.isArray(o?.content)
+            ? o.content
+                .map((ci) => (typeof ci?.text === 'string' ? (ci.text as string) : ''))
+                .filter(Boolean)
+                .join('\n')
+            : ''
+        )
+        .join('\n');
+      if (joined.trim().length > 0) return joined;
+    }
+    if (Array.isArray(maybeObj?.content)) {
+      const joined = (maybeObj.content as Array<{ text?: unknown }>)
+        .map((ci) => (typeof ci?.text === 'string' ? (ci.text as string) : ''))
+        .filter(Boolean)
+        .join('\n');
+      if (joined.trim().length > 0) return joined;
+    }
+    return '';
+  }
 
   private extractBetweenMarkers(
     src: string,

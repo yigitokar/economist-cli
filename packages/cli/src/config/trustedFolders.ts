@@ -7,7 +7,7 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { homedir } from 'node:os';
-import { getErrorMessage, isWithinRoot } from '@google/gemini-cli-core';
+import { getErrorMessage, isWithinRoot } from '@careresearch/econ-core';
 import type { Settings } from './settings.js';
 import stripJsonComments from 'strip-json-comments';
 

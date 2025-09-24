@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { Config, ToolCallRequestInfo } from '@google/gemini-cli-core';
+import type { Config, ToolCallRequestInfo } from '@careresearch/econ-core';
 import {
   executeToolCall,
   shutdownTelemetry,
@@ -13,7 +13,7 @@ import {
   parseAndFormatApiError,
   FatalInputError,
   FatalTurnLimitedError,
-} from '@google/gemini-cli-core';
+} from '@careresearch/econ-core';
 import type { Content, Part } from '@google/genai';
 
 import { ConsolePatcher } from './ui/utils/ConsolePatcher.js';

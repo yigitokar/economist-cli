@@ -83,20 +83,19 @@ export function createContentGeneratorConfig(
     return contentGeneratorConfig;
   }
 
-  if (authType === AuthType.USE_GEMINI && geminiApiKey) {
-    contentGeneratorConfig.apiKey = geminiApiKey;
-    contentGeneratorConfig.vertexai = false;
-
+  if (authType === AuthType.USE_GEMINI) {
+    if (geminiApiKey) {
+      contentGeneratorConfig.apiKey = geminiApiKey;
+      contentGeneratorConfig.vertexai = false;
+    }
     return contentGeneratorConfig;
   }
 
-  if (
-    authType === AuthType.USE_VERTEX_AI &&
-    (googleApiKey || (googleCloudProject && googleCloudLocation))
-  ) {
-    contentGeneratorConfig.apiKey = googleApiKey;
-    contentGeneratorConfig.vertexai = true;
-
+  if (authType === AuthType.USE_VERTEX_AI) {
+    if (googleApiKey || (googleCloudProject && googleCloudLocation)) {
+      contentGeneratorConfig.apiKey = googleApiKey;
+      contentGeneratorConfig.vertexai = true;
+    }
     return contentGeneratorConfig;
   }
 
@@ -134,6 +133,16 @@ export async function createContentGenerator(
     config.authType === AuthType.USE_GEMINI ||
     config.authType === AuthType.USE_VERTEX_AI
   ) {
+    // Do NOT proxy Gemini. Require a direct key or switch auth method.
+    if (
+      config.authType === AuthType.USE_GEMINI &&
+      (!config.apiKey || config.apiKey.trim() === '')
+    ) {
+      throw new Error(
+        'GEMINI_API_KEY is required for direct Gemini usage (no proxy). Set GEMINI_API_KEY, or switch to "Login with Google" or Vertex in settings.',
+      );
+    }
+
     let headers: Record<string, string> = { ...baseHeaders };
     if (gcConfig?.getUsageStatisticsEnabled()) {
       const installationManager = new InstallationManager();

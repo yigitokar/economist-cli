@@ -7,8 +7,8 @@
 import type {
   MCPServerConfig,
   GeminiCLIExtension,
-} from '@google/gemini-cli-core';
-import { GEMINI_DIR, Storage } from '@google/gemini-cli-core';
+} from '@careresearch/econ-core';
+import { GEMINI_DIR, Storage } from '@careresearch/econ-core';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as os from 'node:os';

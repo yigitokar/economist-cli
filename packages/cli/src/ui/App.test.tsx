@@ -16,12 +16,12 @@ import type {
   SandboxConfig,
   GeminiClient,
   AuthType,
-} from '@google/gemini-cli-core';
+} from '@careresearch/econ-core';
 import {
   ApprovalMode,
   ideContext,
   Config as ServerConfig,
-} from '@google/gemini-cli-core';
+} from '@careresearch/econ-core';
 import type { SettingsFile, Settings } from '../config/settings.js';
 import { LoadedSettings } from '../config/settings.js';
 import process from 'node:process';
@@ -97,10 +97,10 @@ interface MockServerConfig {
   getScreenReader: Mock<() => boolean>;
 }
 
-// Mock @google/gemini-cli-core and its Config class
-vi.mock('@google/gemini-cli-core', async (importOriginal) => {
+// Mock @careresearch/econ-core and its Config class
+vi.mock('@careresearch/econ-core', async (importOriginal) => {
   const actualCore =
-    await importOriginal<typeof import('@google/gemini-cli-core')>();
+    await importOriginal<typeof import('@careresearch/econ-core')>();
   const ConfigClassMock = vi
     .fn()
     .mockImplementation((optionsPassedToConstructor) => {
@@ -274,7 +274,7 @@ vi.mock('../hooks/useTerminalSize.js', () => ({
 
 const mockedCheckForUpdates = vi.mocked(checkForUpdates);
 const { isGitRepository: mockedIsGitRepository } = vi.mocked(
-  await import('@google/gemini-cli-core'),
+  await import('@careresearch/econ-core'),
 );
 
 vi.mock('node:child_process');

@@ -10,7 +10,7 @@ import type {
   TelemetrySettings,
   AuthType,
   ChatCompressionSettings,
-} from '@google/gemini-cli-core';
+} from '@careresearch/econ-core';
 import type { CustomTheme } from '../ui/themes/theme.js';
 
 export interface SettingDefinition {
