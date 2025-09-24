@@ -93,7 +93,22 @@ export default function SignUpPage() {
     setStatus("login_redirect");
     await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: typeof window !== "undefined" ? window.location.href : undefined },
+      options: {
+        // Always come back to /sign-up on the same host and include the device code if present.
+        redirectTo:
+          typeof window !== "undefined"
+            ? (() => {
+                const origin = window.location.origin;
+                const url = new URL("/sign-up", origin);
+                const stored = (() => {
+                  try { return window.sessionStorage.getItem("device_code"); } catch { return null; }
+                })();
+                const val = (code ?? stored);
+                if (val) url.searchParams.set("code", val);
+                return url.toString();
+              })()
+            : undefined,
+      },
     });
   };
 

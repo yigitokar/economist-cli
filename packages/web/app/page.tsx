@@ -1,13 +1,14 @@
 "use client";
 
 import type React from 'react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { LineShadowText } from '@/components/line-shadow-text';
 import Image from 'next/image';
 import { ShimmerButton } from '@/components/shimmer-button';
 import { ArrowRight, Menu, Copy, Check, Terminal, Users, Building, GraduationCap, ShieldCheck, FlaskConical, GitBranch, FileText, Search, Zap, Scale, Brain } from 'lucide-react';
+import { supabase } from '@/lib/supabaseClient';
 
 export default function HomePage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -30,6 +31,21 @@ export default function HomePage() {
   const handleSignUp = () => {
     router.push('/sign-up');
   };
+
+  // Fallback: if OAuth lands on the site root with a hash (#access_token),
+  // let Supabase capture the session and move the user to /success.
+  useEffect(() => {
+    const maybeRedirect = async () => {
+      if (typeof window === 'undefined') return;
+      const hasTokenHash = window.location.hash.includes('access_token');
+      if (!hasTokenHash) return;
+      // Ensure session is established from the hash first
+      await supabase.auth.getSession();
+      router.replace('/success');
+    };
+    maybeRedirect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="min-h-screen relative overflow-hidden">
