@@ -16,6 +16,36 @@ function useQueryParam(name: string) {
   return value;
 }
 
+function setDeviceCodeCookie(val: string) {
+  if (typeof document === "undefined") return;
+  try {
+    const host = window.location.hostname;
+    const isLocal = host === "localhost" || /^(\d+\.){3}\d+$/.test(host);
+    const root = isLocal ? "" : "; Domain=." + host.split(".").slice(-2).join(".");
+    document.cookie = `device_code=${encodeURIComponent(val)}; Max-Age=1800; Path=/; SameSite=Lax${root}`;
+  } catch {}
+}
+
+function getDeviceCodeCookie(): string | null {
+  if (typeof document === "undefined") return null;
+  try {
+    const m = document.cookie.match(/(?:^|; )device_code=([^;]+)/);
+    return m ? decodeURIComponent(m[1]) : null;
+  } catch {
+    return null;
+  }
+}
+
+function clearDeviceCodeCookie() {
+  if (typeof document === "undefined") return;
+  try {
+    const host = window.location.hostname;
+    const isLocal = host === "localhost" || /^(\d+\.){3}\d+$/.test(host);
+    const root = isLocal ? "" : "; Domain=." + host.split(".").slice(-2).join(".");
+    document.cookie = `device_code=; Max-Age=0; Path=/${root}`;
+  } catch {}
+}
+
 export default function SignUpPage() {
   const router = useRouter();
   const code = useQueryParam("code");
@@ -43,6 +73,7 @@ export default function SignUpPage() {
       try {
         window.sessionStorage.setItem("device_code", code);
       } catch {}
+      setDeviceCodeCookie(code);
     }
   }, [code]);
 
@@ -56,7 +87,7 @@ export default function SignUpPage() {
         return;
       }
       const deviceCode =
-        code || (typeof window !== "undefined" ? window.sessionStorage.getItem("device_code") : null);
+        code || (typeof window !== "undefined" ? window.sessionStorage.getItem("device_code") : null) || getDeviceCodeCookie();
       if (!deviceCode) {
         // If user came from website and just signed in (no device-link code), send them to success page.
         try {
@@ -76,6 +107,7 @@ export default function SignUpPage() {
           if (typeof window !== "undefined") {
             try { window.sessionStorage.removeItem("device_code"); } catch {}
           }
+          clearDeviceCodeCookie();
           router.replace(`/success?code=${encodeURIComponent(deviceCode)}`);
           return;
         } catch {}

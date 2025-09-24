@@ -30,9 +30,33 @@ export default function SuccessPage() {
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
+  const [discoveredCode, setDiscoveredCode] = useState<string | null>(null);
+
+  function getDeviceCodeCookie(): string | null {
+    if (typeof document === "undefined") return null;
+    try {
+      const m = document.cookie.match(/(?:^|; )device_code=([^;]+)/);
+      return m ? decodeURIComponent(m[1]) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function clearDeviceCodeCookie() {
+    if (typeof document === "undefined") return;
+    try {
+      const host = window.location.hostname;
+      const isLocal = host === "localhost" || /^(\d+\.){3}\d+$/.test(host);
+      const root = isLocal ? "" : "; Domain=." + host.split(".").slice(-2).join(".");
+      document.cookie = `device_code=; Max-Age=0; Path=/${root}`;
+    } catch {}
+  }
 
   useEffect(() => {
     const run = async () => {
+      // Ensure Supabase processes any hash-based session fragments first
+      await supabase.auth.getSession();
+
       // Flow A: Stripe checkout (expects both session_id and code)
       if (sessionId && code) {
         try {
@@ -62,7 +86,31 @@ export default function SuccessPage() {
         return;
       }
 
-      // If neither param is present, still show a friendly page
+      // Flow C: No code param provided. Try to recover device_code from sessionStorage or cookie.
+      let recovered: string | null = null;
+      if (typeof window !== "undefined") {
+        try { recovered = window.sessionStorage.getItem("device_code"); } catch {}
+      }
+      if (!recovered) recovered = getDeviceCodeCookie();
+      if (recovered) {
+        setDiscoveredCode(recovered);
+        try {
+          setStatus("finalizing");
+          await postWithAuth("finalize-link", { code: recovered });
+          // Clear stored code after success
+          if (typeof window !== "undefined") {
+            try { window.sessionStorage.removeItem("device_code"); } catch {}
+          }
+          clearDeviceCodeCookie();
+        } catch (e: any) {
+          // If finalize fails, surface the error but still show the page
+          setError(e?.message ?? String(e));
+        }
+        setStatus("done");
+        return;
+      }
+
+      // If neither param nor stored code is present, still show a friendly page
       setStatus("done");
     };
     run();
@@ -148,7 +196,7 @@ export default function SuccessPage() {
         </div>
 
         <p className="mt-12 text-xs text-white/50" suppressHydrationWarning>
-          Device code: {code ?? "(none)"}
+          Device code: {code ?? discoveredCode ?? "(none)"}
         </p>
       </div>
     </div>
