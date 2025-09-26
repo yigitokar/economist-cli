@@ -139,4 +139,6 @@
 @layer base {
   * { @apply border-border outline-ring/50; }
   body { @apply bg-background text-foreground; }
+  .hero-line { overflow: hidden; display: block; }
+  .hero-line > span { display: inline-block; width: 100%; }
 }

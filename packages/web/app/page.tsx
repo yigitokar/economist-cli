@@ -1,7 +1,7 @@
 "use client";
 
 import type React from 'react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { ShinyButton } from '@/components/ui/shiny-button';
@@ -10,13 +10,30 @@ import Image from 'next/image';
 import { ShimmerButton } from '@/components/shimmer-button';
 import { ArrowRight, Menu, Copy, Check, Terminal, Users, Building, GraduationCap, ShieldCheck, FlaskConical, GitBranch, FileText, Search, Zap, Scale, Brain } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
+import gsap from 'gsap';
+import { useGSAP } from '@gsap/react';
+import SplitType from 'split-type';
+
+if (typeof window !== 'undefined') {
+  gsap.registerPlugin(useGSAP);
+}
 
 export default function HomePage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'industry' | 'government' | 'academia'>('industry');
   const [copiedCommand, setCopiedCommand] = useState<string | null>(null);
   const [waitlistSubmitted, setWaitlistSubmitted] = useState(false);
+  const [fontsReady, setFontsReady] = useState(false);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const router = useRouter();
+
+  const heroSectionRef = useRef<HTMLElement | null>(null);
+  const headingRef = useRef<HTMLHeadingElement | null>(null);
+  const paragraphRef = useRef<HTMLParagraphElement | null>(null);
+  const ctaRef = useRef<HTMLDivElement | null>(null);
+  const imageRef = useRef<HTMLDivElement | null>(null);
+
+  const shouldAnimate = !prefersReducedMotion;
 
   const copyToClipboard = (text: string, commandId: string) => {
     navigator.clipboard.writeText(text);
@@ -33,6 +50,44 @@ export default function HomePage() {
     router.push('/sign-up');
   };
 
+  useEffect(() => {
+    if (typeof document === 'undefined' || !('fonts' in document)) {
+      setFontsReady(true);
+      return;
+    }
+
+    let isActive = true;
+    document.fonts
+      .ready
+      .then(() => {
+        if (isActive) setFontsReady(true);
+      })
+      .catch(() => {
+        if (isActive) setFontsReady(true);
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const updatePreference = () => setPrefersReducedMotion(mediaQuery.matches);
+
+    updatePreference();
+
+    if (typeof mediaQuery.addEventListener === 'function') {
+      mediaQuery.addEventListener('change', updatePreference);
+      return () => mediaQuery.removeEventListener('change', updatePreference);
+    }
+
+    mediaQuery.addListener(updatePreference);
+    return () => mediaQuery.removeListener(updatePreference);
+  }, []);
+
   // Fallback: if OAuth lands on the site root with a hash (#access_token),
   // let Supabase capture the session and move the user to /success.
   useEffect(() => {
@@ -47,6 +102,85 @@ export default function HomePage() {
     maybeRedirect();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useGSAP(
+    () => {
+      if (!fontsReady) return;
+
+      const heading = headingRef.current;
+      const paragraph = paragraphRef.current;
+      const ctaEl = ctaRef.current;
+      const imageEl = imageRef.current;
+
+      let split: SplitType | null = null;
+      let headingTargets: Element[] = [];
+
+      if (!prefersReducedMotion && heading) {
+        split = new SplitType(heading, { types: 'lines', lineClass: 'hero-line' });
+        headingTargets = split.lines as Element[];
+      } else if (heading) {
+        headingTargets = [heading];
+      }
+
+      if (heading) {
+        gsap.set(heading, { autoAlpha: 1 });
+      }
+
+      const ctaButtons = ctaEl ? Array.from(ctaEl.querySelectorAll('button')) : [];
+
+      if (prefersReducedMotion) {
+        if (heading) gsap.set(heading, { clearProps: 'all' });
+        if (paragraph) gsap.set(paragraph, { clearProps: 'all' });
+        if (ctaButtons.length) gsap.set(ctaButtons, { clearProps: 'all' });
+        if (imageEl) gsap.set(imageEl, { clearProps: 'all' });
+        return () => {
+          split?.revert();
+        };
+      }
+
+      if (headingTargets.length) {
+        gsap.set(headingTargets, { autoAlpha: 0, yPercent: 120, filter: 'blur(10px)' });
+      }
+      if (paragraph) {
+        gsap.set(paragraph, { autoAlpha: 0, y: 32, filter: 'blur(8px)' });
+      }
+      if (ctaButtons.length) {
+        gsap.set(ctaButtons, { autoAlpha: 0, y: 28, filter: 'blur(6px)' });
+      }
+      if (imageEl) {
+        gsap.set(imageEl, { autoAlpha: 0, y: 40, scale: 0.96, filter: 'blur(12px)' });
+      }
+
+      const timeline = gsap.timeline({ defaults: { duration: 0.85, ease: 'power3.out' } });
+
+      if (headingTargets.length) {
+        timeline.to(headingTargets, {
+          autoAlpha: 1,
+          yPercent: 0,
+          filter: 'blur(0px)',
+          duration: 1,
+          stagger: 0.15,
+        });
+      }
+
+      if (paragraph) {
+        timeline.to(paragraph, { autoAlpha: 1, y: 0, filter: 'blur(0px)' }, headingTargets.length ? '-=0.45' : 0);
+      }
+
+      if (ctaButtons.length) {
+        timeline.to(ctaButtons, { autoAlpha: 1, y: 0, filter: 'blur(0px)', stagger: 0.12 }, '-=0.35');
+      }
+
+      if (imageEl) {
+        timeline.to(imageEl, { autoAlpha: 1, y: 0, scale: 1, filter: 'blur(0px)' }, '-=0.3');
+      }
+
+      return () => {
+        split?.revert();
+      };
+    },
+    { scope: heroSectionRef, dependencies: [fontsReady, prefersReducedMotion] },
+  );
 
   return (
     <div className="min-h-screen relative overflow-hidden">
@@ -219,25 +353,37 @@ export default function HomePage() {
       )}
 
       {/* Hero Section */}
-      <main className="relative z-10 flex flex-col items-start justify-start sm:justify-center min-h-[calc(100svh-88px)] sm:min-h-[calc(100vh-88px)] px-4 sm:px-6 lg:px-12 max-w-7xl pt-24 sm:pt-28 lg:pt-32 pl-6 sm:pl-12 lg:pl-20">
+      <main
+        ref={heroSectionRef}
+        className="relative z-10 flex flex-col items-start justify-start sm:justify-center min-h-[calc(100svh-88px)] sm:min-h-[calc(100vh-88px)] px-4 sm:px-6 lg:px-12 max-w-7xl pt-24 sm:pt-28 lg:pt-32 pl-6 sm:pl-12 lg:pl-20"
+      >
         <div className="grid gap-8 lg:grid-cols-2 items-center w-full lg:justify-items-end">
           <div className="max-w-2xl">
-            <h1 className="text-white text-[clamp(1.75rem,6vw,4.5rem)] font-bold leading-tight mb-4 sm:mb-6 text-balance">
+            <h1
+              ref={headingRef}
+              style={shouldAnimate ? { opacity: 0 } : undefined}
+              className="text-white text-[clamp(1.75rem,6vw,4.5rem)] font-bold leading-tight mb-4 sm:mb-6 text-balance"
+            >
               From terminal to decision —
               <br />
               with{' '}
               <LineShadowText className="italic font-light" shadowColor="white">proof</LineShadowText>
             </h1>
-            <p className="text-white/70 text-[clamp(1rem,2.5vw,1.5rem)] mb-6 sm:mb-8 max-w-2xl text-pretty">
+            <p
+              ref={paragraphRef}
+              style={shouldAnimate ? { opacity: 0 } : undefined}
+              className="text-white/70 text-[clamp(1rem,2.5vw,1.5rem)] mb-6 sm:mb-8 max-w-2xl text-pretty"
+            >
               EconAgent runs economist-grade analyses with guardrails and provenance, then outputs a one-page
               decision memo and a reproducible bundle.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 mb-8">
+            <div ref={ctaRef} className="flex flex-col sm:flex-row gap-4 mb-8">
               <ShinyButton
                 onClick={handleSignUp}
                 className="relative px-6 sm:px-8 py-2.5 sm:py-3 text-sm sm:text-base md:text-xs lg:text-lg bg-gradient-to-r from-orange-500/80 via-orange-500 to-orange-600/80 border border-orange-300/50 shadow-lg shadow-orange-500/25 hover:shadow-orange-500/60 transition-transform duration-300 ease-out hover:scale-[1.04] hover:-translate-y-0.5"
                 textClassName="flex items-center justify-center gap-2 text-white font-semibold"
                 glowClassName="bg-[radial-gradient(circle,rgba(251,146,60,0.75),transparent_70%)]"
+                style={shouldAnimate ? { opacity: 0 } : undefined}
               >
                 Sign up now
                 <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 transition-transform duration-300 group-hover:translate-x-1 group-hover:-rotate-12" />
@@ -245,12 +391,17 @@ export default function HomePage() {
               <ShinyButton
                 className="px-6 py-2.5 text-sm lg:text-lg"
                 textClassName="flex items-center gap-1 text-white/90 normal-case"
+                style={shouldAnimate ? { opacity: 0 } : undefined}
               >
                 See example memo →
               </ShinyButton>
             </div>
           </div>
-          <div className="relative w-full max-w-[640px] mx-auto lg:mx-0 lg:justify-self-end lg:translate-x-6 xl:translate-x-10 2xl:translate-x-16 aspect-[4/3] rounded-xl overflow-hidden">
+          <div
+            ref={imageRef}
+            style={shouldAnimate ? { opacity: 0 } : undefined}
+            className="relative w-full max-w-[640px] mx-auto lg:mx-0 lg:justify-self-end lg:translate-x-6 xl:translate-x-10 2xl:translate-x-16 aspect-[4/3] rounded-xl overflow-hidden"
+          >
             <Image
               src="/hero.png"
               alt="EconAgent demo screenshot"
