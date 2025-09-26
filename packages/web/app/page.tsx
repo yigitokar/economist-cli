@@ -4,6 +4,7 @@ import type React from 'react';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
+import { ShinyButton } from '@/components/ui/shiny-button';
 import { LineShadowText } from '@/components/line-shadow-text';
 import Image from 'next/image';
 import { ShimmerButton } from '@/components/shimmer-button';
@@ -232,14 +233,21 @@ export default function HomePage() {
               decision memo and a reproducible bundle.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 mb-8">
-              <Button onClick={handleSignUp} className="group relative bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-6 sm:px-8 py-2.5 sm:py-3 rounded-lg text-sm sm:text-base md:text-xs lg:text-lg font-semibold flex items-center gap-2 backdrop-blur-sm border border-orange-400/30 shadow-lg shadow-orange-500/25 hover:shadow-xl hover:shadow-orange-500/40 transition-all duration-300 hover:scale-105 hover:-translate-y-0.5">
+              <ShinyButton
+                onClick={handleSignUp}
+                className="relative px-6 sm:px-8 py-2.5 sm:py-3 text-sm sm:text-base md:text-xs lg:text-lg bg-gradient-to-r from-orange-500/80 via-orange-500 to-orange-600/80 border border-orange-300/50 shadow-lg shadow-orange-500/25 hover:shadow-orange-500/60 transition-transform duration-300 ease-out hover:scale-[1.04] hover:-translate-y-0.5"
+                textClassName="flex items-center justify-center gap-2 text-white font-semibold"
+                glowClassName="bg-[radial-gradient(circle,rgba(251,146,60,0.75),transparent_70%)]"
+              >
                 Sign up now
-                <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 group-hover:translate-x-1 group-hover:-rotate-12 transition-transform duration-300" />
-                <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-white/0 via-white/10 to-white/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              </Button>
-              <Button variant="ghost" className="text-white/80 hover:text-white border border-white/20 hover:border-white/40 px-6 py-2.5 rounded-lg text-sm lg:text-lg">
+                <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 transition-transform duration-300 group-hover:translate-x-1 group-hover:-rotate-12" />
+              </ShinyButton>
+              <ShinyButton
+                className="px-6 py-2.5 text-sm lg:text-lg"
+                textClassName="flex items-center gap-1 text-white/90 normal-case"
+              >
                 See example memo →
-              </Button>
+              </ShinyButton>
             </div>
           </div>
           <div className="relative w-full max-w-[640px] mx-auto lg:mx-0 lg:justify-self-end lg:translate-x-6 xl:translate-x-10 2xl:translate-x-16 aspect-[4/3] rounded-xl overflow-hidden">
