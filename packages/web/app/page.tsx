@@ -1,7 +1,9 @@
 "use client";
 
+type UseCaseTab = 'industry' | 'government' | 'academia';
+
 import type React from 'react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { ShinyButton } from '@/components/ui/shiny-button';
@@ -13,6 +15,7 @@ import { supabase } from '@/lib/supabaseClient';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
 import SplitType from 'split-type';
+import { LimelightNav, type NavItem } from '@/components/limelight-nav';
 
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(useGSAP);
@@ -20,11 +23,23 @@ if (typeof window !== 'undefined') {
 
 export default function HomePage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'industry' | 'government' | 'academia'>('industry');
+  const [activeTab, setActiveTab] = useState<UseCaseTab>('industry');
   const [copiedCommand, setCopiedCommand] = useState<string | null>(null);
   const [waitlistSubmitted, setWaitlistSubmitted] = useState(false);
   const [fontsReady, setFontsReady] = useState(false);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  const useCaseNavItems = useMemo<Array<NavItem & { id: UseCaseTab }>>(
+    () => [
+      { id: 'industry', icon: <Building />, label: 'Industry' },
+      { id: 'government', icon: <Users />, label: 'Government' },
+      { id: 'academia', icon: <GraduationCap />, label: 'Academia' },
+    ],
+    [],
+  );
+  const activeUseCaseIndex = useMemo(() => {
+    const foundIndex = useCaseNavItems.findIndex((item) => item.id === activeTab);
+    return foundIndex === -1 ? 0 : foundIndex;
+  }, [useCaseNavItems, activeTab]);
   const router = useRouter();
 
   const heroSectionRef = useRef<HTMLElement | null>(null);
@@ -48,6 +63,12 @@ export default function HomePage() {
 
   const handleSignUp = () => {
     router.push('/sign-up');
+  };
+
+  const handleUseCaseTabChange = (index: number) => {
+    const target = useCaseNavItems[index];
+    if (!target) return;
+    setActiveTab(target.id);
   };
 
   useEffect(() => {
@@ -447,29 +468,25 @@ export default function HomePage() {
         <div className="max-w-6xl mx-auto">
           <h2 className="text-white text-3xl lg:text-5xl font-bold text-center mb-16">Use cases</h2>
           <div className="flex justify-center mb-8">
-            <div className="flex bg-black/40 backdrop-blur-sm border border-white/10 rounded-lg p-1">
-              {[
-                { id: 'industry', label: 'Industry', icon: Building },
-                { id: 'government', label: 'Government', icon: Users },
-                { id: 'academia', label: 'Academia', icon: GraduationCap },
-              ].map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id as any)}
-                  className={`flex items-center gap-2 px-6 py-3 rounded-md transition-colors ${
-                    activeTab === (tab.id as any) ? 'bg-orange-500 text-white' : 'text-white/70 hover:text-white hover:bg-white/5'
-                  }`}
-                >
-                  <tab.icon className="w-4 h-4" />
-                  {tab.label}
-                </button>
-              ))}
-            </div>
+            <LimelightNav
+              items={useCaseNavItems}
+              defaultActiveIndex={activeUseCaseIndex}
+              onTabChange={handleUseCaseTabChange}
+              className="h-20 bg-black/40 border-white/10 text-white/70 backdrop-blur-sm"
+              iconContainerClassName="text-white/60 hover:text-white data-[active='true']:text-white"
+              iconClassName="text-white"
+              limelightClassName="bg-orange-500 shadow-[0_50px_25px_rgba(249,115,22,0.35)]"
+            />
           </div>
 
           <div className="bg-black/40 backdrop-blur-sm border border-white/10 rounded-xl p-8">
             {activeTab === 'industry' && (
-              <div className="grid md:grid-cols-2 gap-8">
+              <div
+                id="industry-panel"
+                role="tabpanel"
+                aria-labelledby="industry-tab"
+                className="grid md:grid-cols-2 gap-8"
+              >
                 <div>
                   <ul className="space-y-4 text-white/80">
                     <li>• A/B and holdout guardrails → faster, safer ship/no‑ship</li>
@@ -492,7 +509,12 @@ export default function HomePage() {
             )}
 
             {activeTab === 'government' && (
-              <div className="grid md:grid-cols-2 gap-8">
+              <div
+                id="government-panel"
+                role="tabpanel"
+                aria-labelledby="government-tab"
+                className="grid md:grid-cols-2 gap-8"
+              >
                 <div>
                   <ul className="space-y-4 text-white/80">
                     <li>• Credible program evaluation (staggered adoption, DiD)</li>
@@ -514,7 +536,12 @@ export default function HomePage() {
             )}
 
             {activeTab === 'academia' && (
-              <div className="grid md:grid-cols-2 gap-8">
+              <div
+                id="academia-panel"
+                role="tabpanel"
+                aria-labelledby="academia-tab"
+                className="grid md:grid-cols-2 gap-8"
+              >
                 <div>
                   <ul className="space-y-4 text-white/80">
                     <li>• Proof Helper: formal reasoning, edge-case checks, and counterexamples</li>
