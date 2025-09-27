@@ -213,10 +213,10 @@ export const LimelightNav = ({
             tabIndex={isActive ? 0 : -1}
             aria-controls={`${stringId}-panel`}
           >
-            {cloneElement(icon, {
+            {cloneElement(icon as React.ReactElement<any>, {
               className: `w-6 h-6 transition-all duration-200 ease-in-out ${
                 isActive ? 'opacity-100 scale-110' : 'opacity-60'
-              } ${icon.props.className || ''} ${iconClassName || ''}`.trim(),
+              } ${(icon.props as any).className || ''} ${iconClassName || ''}`.trim(),
             })}
             {label ? (
               <span
